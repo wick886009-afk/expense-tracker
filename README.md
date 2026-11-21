@@ -1,12 +1,17 @@
-# Aurelia — Liquid Glass AI Expense Tracker (Vercel-Ready)
+# Aurelia — 16-Bit RPG AI Expense Tracker (Vercel + Supabase Cloud Sync)
 
-A mobile-first Liquid Glass personal finance PWA with deterministic Indian bank SMS parsing (Kotak, HDFC, ICICI, SBI, Axis, UPI), manual transaction confirmation, budgets, analytics, recurring bills, and optional server-side AI fallback.
+A mobile-first personal expense tracker PWA with Indian bank SMS parsing (Kotak, HDFC, ICICI, SBI, Axis, UPI), manual transaction confirmation, budgets, analytics, interactive Minecraft Steve walkway, and live cross-device Supabase sync.
 
-## Deploy to Vercel in 2 Minutes
+## Deploy to Vercel + Enable iPhone/Desktop Cloud Sync (4 Steps)
 
-1. **Unzip** this folder and push it to a GitHub repository (or run `npx vercel` inside the folder).
-2. In **Vercel Dashboard**, import the repository (Framework Preset: **Other** — zero build step required).
-3. *(Optional)* Add `GEMINI_API_KEY` under **Project Settings → Environment Variables** to enable the `/api/parse-sms` server-side AI fallback for unfamiliar SMS templates. Without an API key, the app runs 100% locally using the built-in Indian bank regex + heuristic engine and browser storage.
+1. **Create a free Supabase project** at [supabase.com](https://supabase.com), open **SQL Editor**, and run `supabase/schema.sql`.
+2. In Supabase, go to **Project Settings → API** and copy your **Project URL** and **anon public key**.
+3. **Deploy to Vercel**: unzip this folder and push it to GitHub (or run `npx vercel`), using Framework Preset **Other** (no build command needed).
+4. In **Vercel Project Settings → Environment Variables**, add:
+   - `SUPABASE_URL` = your Supabase Project URL
+   - `SUPABASE_ANON_KEY` = your Supabase anon public key
+   - *(Optional)* `GEMINI_API_KEY` = enables the `/api/parse-sms` AI fallback for unfamiliar bank SMS templates
+   Then **Redeploy**, open your Vercel link on iPhone & desktop, and sign in under **Settings → Cloud Sync**.
 
 ## Install on iPhone 16 Pro
-Open your deployed Vercel URL in Safari → tap **Share** → **Add to Home Screen**.
+Open your Vercel URL in Safari → tap **Share** → **Add to Home Screen**.

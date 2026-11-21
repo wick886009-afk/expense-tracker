@@ -9,6 +9,7 @@
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icons/icon.svg" />
   <title>Aurelia — 16-Bit RPG AI Expense Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Pixelify+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -1295,6 +1296,7 @@
          2. STATE MANAGEMENT & PERSISTENCE
          ========================================================= */
       let state = loadState();
+      let cloudSyncState = { configured: false, client: null, user: null, status: 'local', lastSynced: '', pushTimer: null, channel: null };
       let currentTab = 'home';
       let homeChartMode = 'monthly';
       let txViewMode = 'list';
@@ -1401,6 +1403,136 @@
         try { sessionStorage.setItem(STORAGE_KEY, serialized); } catch (e) {}
         try { window.name = WIN_NAME_PREFIX + serialized; } catch (e) {}
         writeIDB(state);
+        scheduleCloudPush();
+      }
+
+      function scheduleCloudPush() {
+        if (!cloudSyncState.client || !cloudSyncState.user) return;
+        clearTimeout(cloudSyncState.pushTimer);
+        cloudSyncState.status = 'syncing';
+        cloudSyncState.pushTimer = setTimeout(() => { pushStateToCloud(); }, 650);
+      }
+
+      async function pushStateToCloud(showNotify = false) {
+        if (!cloudSyncState.client || !cloudSyncState.user) return;
+        try {
+          cloudSyncState.status = 'syncing';
+          const payload = {
+            user_id: cloudSyncState.user.id,
+            state_json: state,
+            updated_at: new Date(state._savedAt || Date.now()).toISOString()
+          };
+          const { error } = await cloudSyncState.client
+            .from('user_finance_state')
+            .upsert(payload, { onConflict: 'user_id' });
+          if (error) throw error;
+          cloudSyncState.status = 'synced';
+          cloudSyncState.lastSynced = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+          if (showNotify) showToast('Synced to cloud!', 'success');
+          if (currentTab === 'settings') renderApp();
+        } catch (err) {
+          cloudSyncState.status = 'error';
+          if (showNotify) showToast('Cloud sync failed: ' + (err.message || 'check schema'), 'error');
+        }
+      }
+
+      async function pullStateFromCloud(showNotify = false) {
+        if (!cloudSyncState.client || !cloudSyncState.user) return;
+        try {
+          cloudSyncState.status = 'syncing';
+          const { data, error } = await cloudSyncState.client
+            .from('user_finance_state')
+            .select('state_json, updated_at')
+            .eq('user_id', cloudSyncState.user.id)
+            .maybeSingle();
+          if (error) throw error;
+          if (data && data.state_json) {
+            const remote = normalizeLoadedState(data.state_json);
+            if (remote) {
+              const remoteTs = Number(remote._savedAt || Date.parse(data.updated_at) || 0);
+              const localTs = Number(state._savedAt || 0);
+              if (remoteTs >= localTs || state.hasDemoData) {
+                state = remote;
+                const serialized = JSON.stringify(state);
+                try { localStorage.setItem(STORAGE_KEY, serialized); } catch (e) {}
+                try { sessionStorage.setItem(STORAGE_KEY, serialized); } catch (e) {}
+                writeIDB(state);
+              } else {
+                await pushStateToCloud(false);
+              }
+            }
+          } else {
+            await pushStateToCloud(false);
+          }
+          cloudSyncState.status = 'synced';
+          cloudSyncState.lastSynced = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+          if (showNotify) showToast('Cloud data synced!', 'success');
+          renderApp();
+        } catch (err) {
+          cloudSyncState.status = 'error';
+          if (showNotify) showToast('Could not pull cloud state', 'warning');
+        }
+      }
+
+      function subscribeRealtimeSync() {
+        if (!cloudSyncState.client || !cloudSyncState.user) return;
+        if (cloudSyncState.channel) {
+          try { cloudSyncState.client.removeChannel(cloudSyncState.channel); } catch (e) {}
+        }
+        cloudSyncState.channel = cloudSyncState.client
+          .channel('aurelia_state_sync')
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'user_finance_state',
+            filter: `user_id=eq.${cloudSyncState.user.id}`
+          }, (payload) => {
+            const incoming = payload?.new?.state_json;
+            if (!incoming) return;
+            const remote = normalizeLoadedState(incoming);
+            if (remote && Number(remote._savedAt || 0) > Number(state._savedAt || 0)) {
+              state = remote;
+              try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+              writeIDB(state);
+              cloudSyncState.lastSynced = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+              renderApp();
+              showToast('Updated live from another device', 'info');
+            }
+          })
+          .subscribe();
+      }
+
+      async function initSupabaseCloudSync() {
+        // Only runs when Supabase UMD SDK & server /api/config are available (Vercel deployment)
+        if (!window.supabase || !window.__AURELIA_SUPABASE_CONFIG__) return;
+        const { supabaseUrl, supabaseAnonKey } = window.__AURELIA_SUPABASE_CONFIG__;
+        if (!supabaseUrl || !supabaseAnonKey) return;
+        try {
+          const client = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+          cloudSyncState.client = client;
+          cloudSyncState.configured = true;
+          const { data } = await client.auth.getSession();
+          if (data?.session?.user) {
+            cloudSyncState.user = data.session.user;
+            await pullStateFromCloud(false);
+            subscribeRealtimeSync();
+          }
+          client.auth.onAuthStateChange(async (_event, session) => {
+            cloudSyncState.user = session?.user || null;
+            if (cloudSyncState.user) {
+              await pullStateFromCloud(false);
+              subscribeRealtimeSync();
+            } else {
+              cloudSyncState.status = 'local';
+              if (cloudSyncState.channel) {
+                try { client.removeChannel(cloudSyncState.channel); } catch (e) {}
+                cloudSyncState.channel = null;
+              }
+              renderApp();
+            }
+          });
+          if (currentTab === 'settings') renderApp();
+        } catch (e) { /* stay in local-first mode */ }
       }
 
       // Hydrate from IndexedDB on startup if localStorage was empty or older
@@ -2610,8 +2742,55 @@
          9. SETTINGS & PERSONALISATION VIEW
          ========================================================= */
       function renderSettingsView(container) {
+        const cs = cloudSyncState;
+        const badgeCls = cs.status === 'synced'
+          ? 'bg-emeraldPos/15 text-emeraldPos border-emeraldPos/30'
+          : cs.status === 'syncing'
+            ? 'bg-amberGold/25 text-ink border-ink'
+            : 'bg-periwinkle/15 text-periwinkle border-periwinkle/30';
+        const badgeLabel = cs.status === 'synced'
+          ? 'SYNCED ✓'
+          : cs.status === 'syncing'
+            ? 'SYNCING...'
+            : cs.configured ? 'READY TO SIGN IN' : 'LOCAL-ONLY MODE';
+
         container.innerHTML = `
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-in">
+            <!-- Cloud Sync (Supabase Auth & Live Sync) -->
+            <section class="glass-card rounded-3xl p-5 space-y-3 lg:col-span-2">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="font-semibold text-base flex items-center gap-2"><i data-lucide="cloud" class="w-4 h-4 text-periwinkle"></i> Cloud Sync & Multi-Device Login</h3>
+                <span class="text-[10px] font-pixel font-bold px-2.5 py-0.5 border ${badgeCls}">${badgeLabel}</span>
+              </div>
+              ${cs.user ? `
+                <div class="flex flex-wrap items-center justify-between gap-3 p-3 border-2 border-ink" style="background: var(--input-bg);">
+                  <div>
+                    <p class="text-xs font-semibold">Signed in as <span class="text-periwinkle">${escapeHtml(cs.user.email)}</span></p>
+                    <p class="text-[11px] mt-0.5" style="color: var(--text-secondary);">Live Realtime sync is active across your iPhone and desktop.${cs.lastSynced ? ' Last synced: ' + escapeHtml(cs.lastSynced) : ''}</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button id="btn-cloud-sync-now" type="button" class="primary-glow-btn btn-press px-3.5 py-1.5 text-xs">Sync Now ▸</button>
+                    <button id="btn-cloud-signout" type="button" class="glass-card btn-press px-3 py-1.5 text-xs">Sign Out</button>
+                  </div>
+                </div>
+              ` : cs.configured ? `
+                <p class="text-xs" style="color: var(--text-secondary);">Sign in or create an account to sync your expenses, budgets, and merchant rules live between iPhone and desktop.</p>
+                <form id="cloud-auth-form" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <input id="cloud-email" type="email" required placeholder="you@example.com" class="glass-input rounded-xl px-3 py-2 text-xs" />
+                  <input id="cloud-password" type="password" required minlength="6" placeholder="Password (min 6 chars)" class="glass-input rounded-xl px-3 py-2 text-xs" />
+                  <div class="flex gap-2">
+                    <button id="btn-cloud-signin" type="submit" class="primary-glow-btn btn-press flex-1 px-3 py-2 text-xs">Sign In ▸</button>
+                    <button id="btn-cloud-signup" type="button" class="glass-card btn-press px-3 py-2 text-xs font-semibold">Sign Up</button>
+                  </div>
+                </form>
+              ` : `
+                <div class="p-3 border-2 border-ink text-xs space-y-1" style="background: var(--input-bg);">
+                  <p class="font-semibold">Running in Local-First Mode</p>
+                  <p style="color: var(--text-secondary);">Your data is saved automatically on this device. Once deployed on Vercel, add <strong>SUPABASE_URL</strong> and <strong>SUPABASE_ANON_KEY</strong> in Vercel Environment Variables (and run <code>supabase/schema.sql</code>) to unlock live multi-device sync here.</p>
+                </div>
+              `}
+            </section>
+
             <!-- Preferences -->
             <section class="glass-card rounded-3xl p-5 space-y-4">
               <h3 class="font-semibold text-base flex items-center gap-2"><i data-lucide="palette" class="w-4 h-4 text-mint"></i> Appearance & Formatting</h3>
@@ -2822,8 +3001,36 @@
           const btn = document.getElementById('btn-analyse-sms');
           if (wrap) wrap.classList.add('scanning');
           if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="scan-line" class="w-4 h-4 animate-pulse"></i> Scanning SMS...'; lucide.createIcons({ nodes: [btn] }); }
-          setTimeout(() => {
-            const parsed = parseBankSMS(raw);
+          setTimeout(async () => {
+            let parsed = parseBankSMS(raw);
+            const needsAI = !parsed.amount || !parsed.merchant || parsed.confidence?.category === 'low';
+            if (needsAI && location.protocol.startsWith('http')) {
+              try {
+                const res = await fetch('/api/parse-sms', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ sms: raw })
+                });
+                if (res.ok) {
+                  const ai = await res.json();
+                  if (ai && ai.parsed) {
+                    parsed = {
+                      ...parsed,
+                      amount: parsed.amount || ai.parsed.amount || '',
+                      merchant: parsed.merchant || ai.parsed.merchant || '',
+                      date: parsed.date || ai.parsed.date || '',
+                      time: parsed.time || ai.parsed.time || '',
+                      type: ai.parsed.type || parsed.type,
+                      paymentMethod: parsed.paymentMethod || ai.parsed.paymentMethod || '',
+                      account: parsed.account || ai.parsed.account || '',
+                      referenceId: parsed.referenceId || ai.parsed.referenceId || '',
+                      category: (parsed.confidence?.category === 'high' ? parsed.category : (ai.parsed.category || parsed.category)),
+                      subcategory: parsed.subcategory || ai.parsed.subcategory || ''
+                    };
+                  }
+                }
+              } catch (e) {}
+            }
             openConfirmationModal(parsed);
           }, 360);
         });
@@ -3258,6 +3465,35 @@
             showToast('Recurring bill removed', 'info');
             renderApp();
           });
+        });
+
+        // Cloud Sync controls
+        document.getElementById('cloud-auth-form')?.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          if (!cloudSyncState.client) return;
+          const email = document.getElementById('cloud-email')?.value.trim();
+          const password = document.getElementById('cloud-password')?.value;
+          const { error } = await cloudSyncState.client.auth.signInWithPassword({ email, password });
+          if (error) showToast(error.message, 'error');
+          else showToast('Signed in! Syncing your data...', 'success');
+        });
+        document.getElementById('btn-cloud-signup')?.addEventListener('click', async () => {
+          if (!cloudSyncState.client) return;
+          const email = document.getElementById('cloud-email')?.value.trim();
+          const password = document.getElementById('cloud-password')?.value;
+          if (!email || !password || password.length < 6) {
+            showToast('Enter a valid email and 6+ character password.', 'warning');
+            return;
+          }
+          const { error } = await cloudSyncState.client.auth.signUp({ email, password });
+          if (error) showToast(error.message, 'error');
+          else showToast('Account created! Check your email or sign in.', 'success');
+        });
+        document.getElementById('btn-cloud-sync-now')?.addEventListener('click', () => pushStateToCloud(true));
+        document.getElementById('btn-cloud-signout')?.addEventListener('click', async () => {
+          if (!cloudSyncState.client) return;
+          await cloudSyncState.client.auth.signOut();
+          showToast('Signed out — local data kept on this device.', 'info');
         });
 
         // Settings controls
@@ -3848,7 +4084,19 @@
         initGlobalListeners();
         renderApp();
         hydrateFromIndexedDB();
+        fetch('/api/config')
+          .then(r => r.ok ? r.json() : null)
+          .then(cfg => {
+            if (cfg && cfg.supabaseUrl && cfg.supabaseAnonKey) {
+              window.__AURELIA_SUPABASE_CONFIG__ = cfg;
+              initSupabaseCloudSync();
+            }
+          })
+          .catch(() => {});
         initMinecraftSteve();
+        if ('serviceWorker' in navigator && location.protocol === 'https:') {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
       });
     })();
   </script>
