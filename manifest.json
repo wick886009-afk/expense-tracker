@@ -1,0 +1,18 @@
+{
+  "name": "Aurelia — Liquid Glass Expense Tracker",
+  "short_name": "Aurelia",
+  "description": "Apple-inspired Liquid Glass personal expense tracker with Indian bank SMS parsing.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080B12",
+  "theme_color": "#080B12",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
