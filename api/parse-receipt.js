@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -23,33 +23,39 @@ account (string), referenceId (string — UTR or UPI Ref No if shown),
 category (one of: food, groceries, transport, fuel, rent, electricity, internet, healthcare, education, shopping, entertainment, subscriptions, travel, personal_care, fitness, hobbies, emi, loan, insurance, bank_charges, investments, savings, gifts, family, misc, salary, freelance, business, interest, other_income),
 subcategory (string), notes (brief 1-line summary of bill items if visible).`;
 
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } }
-            ]
-          }],
-          generationConfig: { responseMimeType: 'application/json', temperature: 0.1 }
-        })
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
+  let lastErr = 'AI Vision request failed';
+  for (const model of models) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: prompt },
+                { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } }
+              ]
+            }],
+            generationConfig: { responseMimeType: 'application/json', temperature: 0.1 }
+          })
+        }
+      );
+      if (!response.ok) {
+        const errTxt = await response.text();
+        lastErr = `AI Vision (${model}) HTTP ${response.status}: ${errTxt.slice(0, 120)}`;
+        continue;
       }
-    );
-
-    if (!response.ok) {
-      return res.status(200).json({ parsed: null, error: 'AI Vision upstream unavailable' });
+      const data = await response.json();
+      const rawJson = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      const cleaned = rawJson.replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
+      const parsed = JSON.parse(cleaned);
+      return res.status(200).json({ parsed, mode: 'ai-vision', model });
+    } catch (err) {
+      lastErr = err?.message || 'Vision parse error';
     }
-
-    const data = await response.json();
-    const rawJson = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-    const parsed = JSON.parse(rawJson);
-    return res.status(200).json({ parsed, mode: 'ai-vision' });
-  } catch (err) {
-    return res.status(200).json({ parsed: null, error: 'Vision fallback' });
   }
+  return res.status(200).json({ parsed: null, error: lastErr });
 }

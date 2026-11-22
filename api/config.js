@@ -1,7 +1,8 @@
-export default function handler(req, res) {
+module.exports = function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   return res.status(200).json({
     supabaseUrl: process.env.SUPABASE_URL || '',
-    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || ''
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
+    hasGeminiKey: Boolean(process.env.GEMINI_API_KEY)
   });
 }

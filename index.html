@@ -1232,6 +1232,26 @@
       transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
+
+    /* Crisp, effortlessly readable financial figures & labels */
+    #counter-spend,
+    .tabular-nums {
+      font-family: "Figtree", -apple-system, BlinkMacSystemFont, sans-serif !important;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+
+    #counter-spend {
+      font-weight: 800 !important;
+      line-height: 1.1;
+    }
+
+    .hero-balance-card p.uppercase {
+      font-family: "Figtree", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
   </style>
 </head>
 <body>
@@ -3707,7 +3727,7 @@
         });
       }
 
-      function compressReceiptImage(file, maxDim = 1280, quality = 0.82) {
+      function compressReceiptImage(file, maxDim = 1024, quality = 0.78) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onerror = () => reject(new Error('Could not read image'));
@@ -3895,25 +3915,30 @@
         return results;
       }
 
-      async function parsePDFStatement(file, defaultAccount, password = '') {
+      async function extractPDFTextLines(file, password = '') {
         if (typeof pdfjsLib === 'undefined') {
-          throw new Error('PDF reader library is still loading. Check your connection and try again.');
+          throw new Error('PDF reader library is still loading. Check your internet connection and retry.');
         }
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         const arrayBuffer = await file.arrayBuffer();
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, password: password || undefined });
-        const pdf = await loadingTask.promise;
+        let pdf = null;
+        try {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0), password: password || undefined }).promise;
+        } catch (workerErr) {
+          if (/password/i.test(String(workerErr?.name || workerErr?.message || ''))) throw workerErr;
+          // Fallback to main-thread PDF parsing if worker fails (common on iOS PWA / strict networks)
+          pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0), password: password || undefined, disableWorker: true }).promise;
+        }
 
         const allLines = [];
         for (let pNum = 1; pNum <= pdf.numPages; pNum++) {
           const page = await pdf.getPage(pNum);
           const tc = await page.getTextContent();
-          // Group text items by rounded Y coordinate to reconstruct visual table rows
           const rowMap = new Map();
           for (const item of tc.items) {
             const str = (item.str || '').trim();
             if (!str) continue;
-            const y = Math.round(item.transform[5] / 3) * 3;
+            const y = Math.round(item.transform[5] / 4) * 4;
             const x = item.transform[4];
             if (!rowMap.has(y)) rowMap.set(y, []);
             rowMap.get(y).push({ x, str });
@@ -3921,19 +3946,34 @@
           const sortedYs = Array.from(rowMap.keys()).sort((a, b) => b - a);
           for (const y of sortedYs) {
             const line = rowMap.get(y).sort((a, b) => a.x - b.x).map(i => i.str).join(' ');
-            allLines.push(line);
+            if (line.trim()) allLines.push(line.trim());
+          }
+        }
+        return allLines;
+      }
+
+      async function parsePDFStatement(file, defaultAccount, password = '') {
+        const rawLines = await extractPDFTextLines(file, password);
+        if (!rawLines.length) return [];
+
+        // Stitch multi-line Indian bank rows: attach non-date continuation lines to the preceding date row
+        const dateStartRe = /^(\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|\d{1,2}[-\s/](?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[-\s/,]*\d{2,4}|\d{4}[-/.]\d{2}[-/.]\d{2})\b\s*(.*)/i;
+        const stitched = [];
+        for (const line of rawLines) {
+          if (dateStartRe.test(line)) {
+            stitched.push(line);
+          } else if (stitched.length > 0 && stitched[stitched.length - 1].length < 260 && !/^(page\s+\d|statement\s+of|account\s+no|branch|ifsc|opening\s+bal|closing\s+bal)/i.test(line)) {
+            stitched[stitched.length - 1] += ' ' + line;
           }
         }
 
-        // Parse Indian bank statement rows starting with a date
         const results = [];
-        const dateStartRe = /^(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}[-\s/](?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[-\s/,]*\d{2,4}|\d{4}[-/]\d{2}[-/]\d{2})\b\s*(.*)/i;
-        const numRe = /(?:₹|rs\.?|inr)?\s*([0-9]{1,3}(?:,[0-9]{2,3})*\.[0-9]{2}|[0-9]+\.[0-9]{2})\s*(cr|dr)?/gi;
+        const numRe = /(?:₹|rs\.?|inr)?\s*([0-9]{1,3}(?:,[0-9]{2,3})*\.[0-9]{2}|[0-9]+\.[0-9]{2})\s*(cr|dr|\(cr\)|\(dr\))?/gi;
 
-        for (const line of allLines) {
+        for (const line of stitched) {
           const dm = line.match(dateStartRe);
           if (!dm) continue;
-          const iso = parseDateFlexible(dm[1]);
+          const iso = parseDateFlexible(dm[1].replace(/\./g, '-'));
           if (!iso) continue;
           const rest = dm[2] || '';
           const nums = [];
@@ -3941,18 +3981,18 @@
           numRe.lastIndex = 0;
           while ((nm = numRe.exec(rest)) !== null) {
             const val = parseFloat(nm[1].replace(/,/g, ''));
-            if (!isNaN(val) && val > 0) nums.push({ val, flag: (nm[2] || '').toLowerCase(), idx: nm.index });
+            if (!isNaN(val) && val > 0) nums.push({ val, flag: (nm[2] || '').replace(/[()]/g, '').toLowerCase(), idx: nm.index });
           }
           if (nums.length === 0) continue;
 
-          // In Indian bank statements, the last number is usually Running Balance, and the one before it is Txn Amount
+          // If 2+ decimal numbers appear, last is usually Running Balance, second-to-last is Txn Amount
           const txnObj = nums.length >= 2 ? nums[nums.length - 2] : nums[0];
           const amount = txnObj.val;
           if (amount <= 0) continue;
 
           const firstNumIdx = nums[0].idx;
-          const narration = rest.slice(0, firstNumIdx).replace(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/g, '').trim();
-          if (narration.length < 2 || /opening\s*balance|closing\s*balance|statement\s*summary/i.test(narration)) continue;
+          const narration = rest.slice(0, firstNumIdx).replace(/\b\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}\b/g, '').trim();
+          if (narration.length < 2 || /opening\s*balance|closing\s*balance|statement\s*summary|brought\s*forward/i.test(narration)) continue;
 
           const isCredit = txnObj.flag === 'cr' || /\b(cr|credit|salary|refund|interest\s*paid|deposit|received)\b/i.test(narration);
           const refMatch = narration.match(/\b([A-Z0-9]{10,20})\b/);
@@ -3970,6 +4010,44 @@
           candidate.selected = !candidate.isDuplicate;
           results.push(candidate);
         }
+
+        // If regex found 0 rows on an unusual bank PDF layout, try server-side AI statement parser on Vercel
+        if (results.length === 0 && window.__AURELIA_RECEIPT_API_ENABLED__ && location.protocol.startsWith('http')) {
+          try {
+            const res = await fetch('/api/parse-statement', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: rawLines.join('\n').slice(0, 14000) })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (Array.isArray(data?.transactions)) {
+                data.transactions.forEach(t => {
+                  const amt = Number(t.amount) || 0;
+                  if (amt <= 0) return;
+                  const cand = {
+                    amount: amt,
+                    merchant: t.merchant || 'Bank Transaction',
+                    date: parseDateFlexible(t.date) || isoDaysAgo(0),
+                    time: '',
+                    type: t.type || 'expense',
+                    paymentMethod: t.paymentMethod || 'UPI',
+                    account: defaultAccount,
+                    referenceId: t.referenceId || '',
+                    category: t.category || 'misc',
+                    subcategory: t.subcategory || '',
+                    notes: t.notes || '',
+                    scope: 'personal'
+                  };
+                  cand.isDuplicate = !!detectDuplicate(cand);
+                  cand.selected = !cand.isDuplicate;
+                  results.push(cand);
+                });
+              }
+            }
+          } catch (e) {}
+        }
+
         return results;
       }
 
@@ -4011,12 +4089,12 @@
                   </div>
                 </div>
 
-                <input id="stmt-file-input" type="file" accept=".csv,.pdf,text/csv,application/pdf" class="hidden" />
-                <div id="stmt-dropzone" class="glass-input p-6 text-center cursor-pointer space-y-2">
+                <input id="stmt-file-input" type="file" accept=".csv,.pdf,text/csv,application/pdf" class="sr-only" />
+                <label id="stmt-dropzone" for="stmt-file-input" class="block glass-input p-6 text-center cursor-pointer space-y-2">
                   <i data-lucide="file-spreadsheet" class="w-9 h-9 mx-auto opacity-75"></i>
-                  <p class="font-pixel font-bold text-xs sm:text-sm uppercase">${selectedFile ? escapeHtml(selectedFile.name) : 'Tap or Drop Bank Statement (.PDF or .CSV)'}</p>
-                  <p class="text-[11px]" style="color: var(--text-secondary);">Supports Kotak, HDFC, ICICI, SBI, Axis & standard CSV/PDF bank statements.</p>
-                </div>
+                  <p class="font-pixel font-bold text-xs sm:text-sm uppercase">${selectedFile ? escapeHtml(selectedFile.name) : 'Tap to Choose Bank Statement (.PDF or .CSV)'}</p>
+                  <p class="text-[11px]" style="color: var(--text-secondary);">Supports Kotak, HDFC, ICICI, SBI, Axis & standard CSV/PDF statements.</p>
+                </label>
 
                 <div class="flex justify-end gap-2 pt-2 border-t" style="border-color: var(--border-ink);">
                   <button id="stmt-cancel" type="button" class="glass-card btn-press px-4 py-2 text-xs">Cancel</button>
@@ -4075,7 +4153,7 @@
           if (parsedRows.length === 0) {
             const inp = document.getElementById('stmt-file-input');
             const dz = document.getElementById('stmt-dropzone');
-            dz?.addEventListener('click', () => inp?.click());
+            // Native <label for> triggers file picker reliably on iOS Safari & Desktop
             inp?.addEventListener('change', (e) => { if (e.target.files?.[0]) { selectedFile = e.target.files[0]; renderImportShell(); } });
             dz?.addEventListener('dragover', (e) => { e.preventDefault(); dz.style.borderColor = '#F4B841'; });
             dz?.addEventListener('dragleave', () => { dz.style.borderColor = ''; });
@@ -4185,18 +4263,18 @@
             </div>
 
             <div class="grid grid-cols-2 gap-2.5">
-              <button id="btn-rcp-camera" type="button" class="primary-glow-btn btn-press py-2.5 px-3 text-xs flex items-center justify-center gap-1.5">
+              <label id="btn-rcp-camera" for="rcp-camera-input" class="primary-glow-btn btn-press py-2.5 px-3 text-xs flex items-center justify-center gap-1.5 cursor-pointer">
                 <i data-lucide="camera" class="w-4 h-4"></i> Take Bill Photo
-              </button>
-              <button id="btn-rcp-upload" type="button" class="glass-card btn-press py-2.5 px-3 text-xs font-pixel font-bold uppercase flex items-center justify-center gap-1.5">
+              </label>
+              <label id="btn-rcp-upload" for="rcp-file-input" class="glass-card btn-press py-2.5 px-3 text-xs font-pixel font-bold uppercase flex items-center justify-center gap-1.5 cursor-pointer">
                 <i data-lucide="image-plus" class="w-4 h-4"></i> Upload Screenshot
-              </button>
+              </label>
             </div>
 
-            <input id="rcp-camera-input" type="file" accept="image/*" capture="environment" class="hidden" />
-            <input id="rcp-file-input" type="file" accept="image/*" class="hidden" />
+            <input id="rcp-camera-input" type="file" accept="image/*" capture="environment" class="sr-only" />
+            <input id="rcp-file-input" type="file" accept="image/*" class="sr-only" />
 
-            <div id="rcp-dropzone" class="sms-scan-wrap glass-input p-4 text-center cursor-pointer transition-colors">
+            <label id="rcp-dropzone" for="rcp-file-input" class="block sms-scan-wrap glass-input p-4 text-center cursor-pointer transition-colors">
               <div class="sms-scan-beam"></div>
               <div id="rcp-empty-prompt" class="py-6 space-y-2">
                 <i data-lucide="scan-line" class="w-8 h-8 mx-auto opacity-70"></i>
@@ -4207,7 +4285,7 @@
                 <img id="rcp-preview-img" alt="Bill or transaction screenshot preview" class="max-h-60 mx-auto border-2 border-ink object-contain" />
                 <p id="rcp-file-label" class="text-[11px]" style="color: var(--text-secondary);"></p>
               </div>
-            </div>
+            </label>
 
             <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style="border-color: var(--border-ink);">
               <button id="btn-rcp-to-sms" type="button" class="glass-card btn-press px-3 py-2 text-xs">Switch to SMS Text</button>
@@ -4256,11 +4334,8 @@
 
         document.getElementById('rcp-close-btn')?.addEventListener('click', cleanupAndClose);
         document.getElementById('btn-rcp-to-sms')?.addEventListener('click', () => { window.removeEventListener('paste', onPaste); openSMSParserModal(); });
-        document.getElementById('btn-rcp-camera')?.addEventListener('click', () => document.getElementById('rcp-camera-input')?.click());
-        document.getElementById('btn-rcp-upload')?.addEventListener('click', () => document.getElementById('rcp-file-input')?.click());
-        document.getElementById('rcp-dropzone')?.addEventListener('click', () => document.getElementById('rcp-file-input')?.click());
-        document.getElementById('rcp-camera-input')?.addEventListener('change', (e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); });
-        document.getElementById('rcp-file-input')?.addEventListener('change', (e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); });
+        document.getElementById('rcp-camera-input')?.addEventListener('change', (e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = ''; });
+        document.getElementById('rcp-file-input')?.addEventListener('change', (e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = ''; });
 
         const dz = document.getElementById('rcp-dropzone');
         dz?.addEventListener('dragover', (e) => { e.preventDefault(); dz.style.borderColor = '#F4B841'; });
@@ -4327,8 +4402,8 @@
                     }
                   };
                   showToast('Bill details extracted with AI Vision!', 'success');
-                } else if (data?.note) {
-                  showToast('AI Vision key not set — review bill preview and fill fields below.', 'info');
+                } else if (data?.error || data?.note) {
+                  showToast(data.error || data.note, 'warning');
                 }
               }
             } catch (err) {
