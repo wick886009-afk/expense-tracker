@@ -1600,7 +1600,7 @@
          2. STATE MANAGEMENT & PERSISTENCE
          ========================================================= */
       let state = loadState();
-      let cloudSyncState = { configured: false, client: null, user: null, status: 'local', lastSynced: '', pushTimer: null, channel: null, hydrated: false };
+      let cloudSyncState = { configured: false, client: null, user: null, status: 'local', lastSynced: '', pushTimer: null, channel: null, hydrated: false, pulling: false };
       let currentTab = 'home';
       let homeChartMode = 'monthly';
       let txViewMode = 'list';
@@ -1752,7 +1752,9 @@
       }
 
       async function pullStateFromCloud(showNotify = false) {
-        if (!cloudSyncState.client || !cloudSyncState.user) return;
+        if (!cloudSyncState.client || !cloudSyncState.user || cloudSyncState.pulling) return;
+        cloudSyncState.pulling = true;
+        const prevSig = JSON.stringify({ tx: state.transactions, b: state.budgets, r: state.recurring, s: state.settings });
         try {
           cloudSyncState.status = 'syncing';
           const { data, error } = await cloudSyncState.client
@@ -1810,10 +1812,15 @@
           cloudSyncState.status = 'synced';
           cloudSyncState.lastSynced = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
           if (showNotify) showToast('Cloud data loaded & synced!', 'success');
-          renderApp();
+          const nextSig = JSON.stringify({ tx: state.transactions, b: state.budgets, r: state.recurring, s: state.settings });
+          if (nextSig !== prevSig || currentTab === 'settings') {
+            renderApp();
+          }
         } catch (err) {
           cloudSyncState.status = 'error';
           if (showNotify) showToast('Could not pull cloud state: ' + (err.message || ''), 'warning');
+        } finally {
+          cloudSyncState.pulling = false;
         }
       }
 
@@ -1860,8 +1867,13 @@
             await pullStateFromCloud(false);
             subscribeRealtimeSync();
           }
-          client.auth.onAuthStateChange(async (_event, session) => {
-            cloudSyncState.user = session?.user || null;
+          client.auth.onAuthStateChange(async (event, session) => {
+            const nextUser = session?.user || null;
+            if (event === 'INITIAL_SESSION' && cloudSyncState.user && nextUser && cloudSyncState.user.id === nextUser.id) {
+              return;
+            }
+            if (event === 'TOKEN_REFRESHED') return;
+            cloudSyncState.user = nextUser;
             if (cloudSyncState.user) {
               await pullStateFromCloud(false);
               subscribeRealtimeSync();
@@ -1887,10 +1899,12 @@
           const idbTs = Number(norm._savedAt || 0);
           const curTs = Number(state._savedAt || 0);
           if (!loadedFromSyncStore || idbTs > curTs) {
+            const prevSig = JSON.stringify({ tx: state.transactions, b: state.budgets, r: state.recurring });
             state = norm;
             try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
             try { window.name = WIN_NAME_PREFIX + JSON.stringify(state); } catch (e) {}
-            renderApp();
+            const nextSig = JSON.stringify({ tx: state.transactions, b: state.budgets, r: state.recurring });
+            if (nextSig !== prevSig) renderApp();
           }
         });
       }
