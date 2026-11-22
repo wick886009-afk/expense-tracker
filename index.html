@@ -1252,6 +1252,24 @@
       letter-spacing: 0.08em;
     }
 
+
+    /* Prevent iOS Safari date/time inputs from overflowing grid cells */
+    .glass-modal form > div > div {
+      min-width: 0;
+    }
+    .glass-input {
+      max-width: 100%;
+      min-width: 0;
+    }
+    input[type="date"].glass-input,
+    input[type="time"].glass-input {
+      -webkit-appearance: none;
+      appearance: none;
+      display: block;
+      width: 100%;
+      min-height: 36px;
+    }
+
   </style>
 </head>
 <body>

@@ -11,7 +11,7 @@ Return ONLY valid JSON: { "transactions": [ { "date": "YYYY-MM-DD", "merchant": 
 STATEMENT TEXT:
 ${text.slice(0, 14000)}`;
 
-  for (const model of ['gemini-2.5-flash', 'gemini-2.0-flash']) {
+  for (const model of ['gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-2.5-flash-lite']) {
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,

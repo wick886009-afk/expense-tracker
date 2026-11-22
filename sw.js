@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aurelia-creeper-v5';
+const CACHE_NAME = 'aurelia-creeper-v6';
 const ASSETS = ['/', '/index.html', '/manifest.json', '/icons/apple-touch-icon.png', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon.svg'];
 
 self.addEventListener('install', (event) => {

@@ -23,7 +23,19 @@ account (string), referenceId (string — UTR or UPI Ref No if shown),
 category (one of: food, groceries, transport, fuel, rent, electricity, internet, healthcare, education, shopping, entertainment, subscriptions, travel, personal_care, fitness, hobbies, emi, loan, insurance, bank_charges, investments, savings, gifts, family, misc, salary, freelance, business, interest, other_income),
 subcategory (string), notes (brief 1-line summary of bill items if visible).`;
 
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
+  let models = ['gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-2.5-flash-lite'];
+  // Append any live Flash models available to this API key as automatic future-proof fallback
+  try {
+    const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      const liveFlash = (listData.models || [])
+        .filter(m => /flash/i.test(m.name) && !/tts|audio|live|image|embedding/i.test(m.name) && (m.supportedGenerationMethods || []).includes('generateContent'))
+        .map(m => m.name.replace(/^models\//, ''))
+        .reverse();
+      models = Array.from(new Set([...models, ...liveFlash])).slice(0, 6);
+    }
+  } catch (e) {}
   let lastErr = 'AI Vision request failed';
   for (const model of models) {
     try {
