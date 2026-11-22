@@ -4,18 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#080B12" id="theme-color-meta" />
   <link rel="manifest" href="/manifest.json" />
-  <link rel="apple-touch-icon" href="/icons/icon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
   <title>Aurelia — 16-Bit RPG AI Expense Tracker</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>window.__AURELIA_RECEIPT_API_ENABLED__ = true;</script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Pixelify+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -203,7 +209,7 @@
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
       position: relative;
-      transition: transform 0.12s steps(2), box-shadow 0.12s steps(2), background-color 0.15s ease;
+      transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.24s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease;
     }
 
     .glass-card::before {
@@ -260,7 +266,7 @@
     /* Tactile Pixel Button Press */
     .btn-press {
       border-radius: 2px !important;
-      transition: transform 0.08s ease, box-shadow 0.08s ease;
+      transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.18s ease;
     }
 
     .btn-press:hover {
@@ -354,7 +360,7 @@
         #14111D 12px,
         #14111D 14px
       );
-      transition: width 0.5s steps(12);
+      transition: width 0.65s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     /* Handheld Console Bottom Navigation */
@@ -961,9 +967,277 @@
       }
     }
 
+
+    #ios-safe-top-cap {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--safe-top);
+      background-color: var(--bg-primary);
+      z-index: 60;
+      pointer-events: none;
+    }
+
+
+    /* =========================================================
+       SUPER 16-BIT ANIMATION PACK (SHOOTING STARS, SCROLL REVEAL,
+       BAR GROW, CREEPER FLASH, DRILL-DOWN SLIDE, TOAST COUNTDOWN)
+       ========================================================= */
+    @keyframes shootingStar {
+      0% { transform: translate3d(0, 0, 0) rotate(-32deg) scaleX(0.4); opacity: 0; }
+      10% { opacity: 0.95; }
+      30% { transform: translate3d(260px, 155px, 0) rotate(-32deg) scaleX(1.3); opacity: 0; }
+      100% { transform: translate3d(260px, 155px, 0) rotate(-32deg) scaleX(1.3); opacity: 0; }
+    }
+
+    @keyframes barGrowX {
+      0% { transform: scaleX(0); }
+      100% { transform: scaleX(1); }
+    }
+
+    @keyframes drillSlideIn {
+      0% { opacity: 0; transform: translateX(18px) scale(0.985); }
+      100% { opacity: 1; transform: translateX(0) scale(1); }
+    }
+
+    @keyframes creeperFlash {
+      0%, 100% { filter: brightness(1); transform: scale(1); }
+      25% { filter: brightness(1.85) contrast(1.1); transform: scale(1.12); }
+      50% { filter: brightness(1); transform: scale(0.96); }
+      75% { filter: brightness(1.75); transform: scale(1.1); }
+    }
+
+    @keyframes toastPopIn {
+      0% { opacity: 0; transform: translateY(-16px) scale(0.92); }
+      65% { opacity: 1; transform: translateY(3px) scale(1.02); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes toastTimerDrain {
+      0% { transform: scaleX(1); }
+      100% { transform: scaleX(0); }
+    }
+
+    @keyframes worldBadgeGlint {
+      0%, 82%, 100% { box-shadow: inset 0 0 0 0 rgba(244, 184, 65, 0); }
+      90% { box-shadow: inset 0 0 12px 2px rgba(244, 184, 65, 0.55); }
+    }
+
+    @keyframes kpiFloatHover {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-2px); }
+    }
+
+    @keyframes ringDraw {
+      from { stroke-dashoffset: 277; }
+    }
+
+    .pixel-shooting-star {
+      position: absolute;
+      width: 46px;
+      height: 3px;
+      background: linear-gradient(90deg, rgba(244, 184, 65, 0) 0%, #F4B841 70%, #FFFFFF 100%);
+      box-shadow: 0 0 8px #F4B841;
+      pointer-events: none;
+      opacity: 0;
+      animation: shootingStar 7.5s linear infinite;
+    }
+
+    /* Animated horizontal progress bars across Analytics, Budgets & Drill-down */
+    .drill-cat-btn .h-full,
+    .drill-sub-btn .h-full,
+    .glass-card .h-2 > .h-full,
+    .glass-card .h-1\.5 > .h-full,
+    .pixel-bar-fill {
+      transform-origin: left center;
+      animation: barGrowX 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    /* Interactive Drill-Down Cards & KPI Lift */
+    .drill-cat-btn, .drill-sub-btn {
+      animation: drillSlideIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+      transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.16s ease, background-color 0.15s ease !important;
+    }
+    .drill-cat-btn:hover, .drill-sub-btn:hover {
+      transform: translate(-2px, -3px) !important;
+      box-shadow: 6px 6px 0px #14111D !important;
+    }
+    .drill-cat-btn:hover svg, .drill-sub-btn:hover svg {
+      animation: iconWiggle 0.4s ease-in-out;
+    }
+
+    /* Hero World Badge subtle pulse */
+    .hero-balance-card::after {
+      animation: worldBadgeGlint 4.5s ease-in-out infinite;
+    }
+
+    /* Creeper logo hiss-flash on click */
+    #header-coin-badge.creeper-flashing {
+      animation: creeperFlash 0.48s ease-in-out;
+    }
+
+    /* Toast spring entrance + countdown bar */
+    .toast-rpg-item {
+      position: relative;
+      overflow: hidden;
+      animation: toastPopIn 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both !important;
+    }
+    .toast-rpg-item::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: #F4B841;
+      transform-origin: left center;
+      animation: toastTimerDrain 3.2s linear forwards;
+    }
+
+    /* Scroll reveal for lower cards */
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(16px) scale(0.985);
+      transition: opacity 0.38s ease-out, transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .scroll-reveal.revealed {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Budget SVG ring smooth draw-in */
+    svg circle[stroke-dasharray] {
+      animation: ringDraw 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    /* Tactile hover pop for top bar icon buttons */
+    #main-header button:hover svg {
+      animation: iconWiggle 0.38s ease-in-out;
+    }
+
+
+    /* =========================================================
+       SILKY 120HZ MOTION & SMOOTH MODAL / PAGE TRANSITIONS
+       ========================================================= */
+    @keyframes backdropFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes sheetSilkIn {
+      0% { opacity: 0; transform: translate3d(0, 22px, 0) scale(0.965); }
+      100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+    }
+
+    @keyframes pageSilkIn {
+      0% { opacity: 0; transform: translate3d(0, 8px, 0); }
+      100% { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+
+    @keyframes cardSilkIn {
+      0% { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.99); }
+      100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* GPU-accelerated crisp compositing for smooth scrolling & motion */
+    .glass-card, .cartridge-btn, .tx-row-btn, .glass-modal, .drill-cat-btn, .drill-sub-btn {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .animate-in {
+      animation: cardSilkIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+      animation-delay: calc(var(--stagger, 0) * 42ms) !important;
+    }
+
+    #app-view.view-transition {
+      animation: pageSilkIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+    }
+
+    /* Smooth Modal Backdrop & Sheet Open / Close */
+    #modal-root {
+      transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #modal-root.modal-open {
+      animation: backdropFadeIn 0.22s ease-out both;
+    }
+    #modal-root.modal-closing {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #modal-root.modal-closing .glass-modal {
+      transform: translate3d(0, 14px, 0) scale(0.97) !important;
+      opacity: 0 !important;
+      transition: transform 0.18s cubic-bezier(0.4, 0, 1, 1), opacity 0.18s ease !important;
+    }
+
+    .sheet-animate {
+      animation: sheetSilkIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+      will-change: transform, opacity;
+    }
+
+    /* Gentler, faster scroll reveal so fast mobile scrolling never lags */
+    .scroll-reveal {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0);
+      transition: opacity 0.36s cubic-bezier(0.16, 1, 0.3, 1), transform 0.42s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      will-change: transform, opacity;
+    }
+    .scroll-reveal.revealed {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+
+    /* Smoother cartridge & row transitions */
+    .cartridge-btn {
+      transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.26s cubic-bezier(0.22, 1, 0.36, 1) !important;
+    }
+    .tx-row-btn {
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease !important;
+    }
+
+    /* Smoother toast slide */
+    .toast-rpg-item {
+      animation: sheetSilkIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+    }
+
+
+    /* =========================================================
+       ANALYTICS PAGE ZERO-LAG SMOOTHNESS OVERRIDES
+       ========================================================= */
+    @keyframes drillFadeSoft {
+      from { opacity: 0; transform: translate3d(0, 6px, 0); }
+      to { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+
+    #drilldown-panel-body.drill-swap {
+      animation: drillFadeSoft 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    /* Remove competing nested animations inside drill-down cards */
+    .drill-cat-btn, .drill-sub-btn {
+      animation: none !important;
+      transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s ease, background-color 0.15s ease !important;
+    }
+    .drill-cat-btn .h-full,
+    .drill-sub-btn .h-full,
+    .glass-card .h-2 > .h-full,
+    .glass-card .h-1\.5 > .h-full {
+      animation: none !important;
+      transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
   </style>
 </head>
 <body>
+  <!-- Solid Opaque iOS Safe-Area Top Cap (prevents iOS status-bar blur/haze over header) -->
+  <div id="ios-safe-top-cap" aria-hidden="true"></div>
+
   <!-- Ambient Liquid Glass Background -->
   <div class="ambient-bg" aria-hidden="true">
     <div class="orb orb-1"></div>
@@ -977,12 +1251,22 @@
     <!-- Top Header -->
     <header id="main-header" class="glass-card sticky top-0 z-40 flex items-center justify-between gap-2 px-3 py-2 sm:px-4 sm:py-2.5 mb-2">
       <div class="flex items-center gap-3 min-w-0">
-        <div id="header-coin-badge" title="Tap for pixel coin burst!" class="w-9 h-9 sm:w-10 sm:h-10 primary-glow-btn logo-coin-bounce flex items-center justify-center shrink-0 font-pixel text-lg sm:text-xl font-bold">
-          ₹
+        <div id="header-coin-badge" title="Tap Creeper for pixel coin burst!" class="w-9 h-9 sm:w-10 sm:h-10 logo-coin-bounce flex items-center justify-center shrink-0 border-2 border-ink overflow-hidden" style="box-shadow: 3px 3px 0px #14111D; background: #5EBD49;">
+          <svg viewBox="0 0 8 8" class="w-full h-full" shape-rendering="crispEdges" aria-label="Creeper logo">
+            <rect width="8" height="8" fill="#5EBD49"/>
+            <rect x="0" y="0" width="2" height="2" fill="#7DD35F"/>
+            <rect x="5" y="0" width="3" height="1" fill="#439E34"/>
+            <rect x="1" y="2" width="2" height="2" fill="#14111D"/>
+            <rect x="5" y="2" width="2" height="2" fill="#14111D"/>
+            <rect x="3" y="4" width="2" height="2" fill="#14111D"/>
+            <rect x="2" y="5" width="4" height="2" fill="#14111D"/>
+            <rect x="2" y="7" width="1" height="1" fill="#14111D"/>
+            <rect x="5" y="7" width="1" height="1" fill="#14111D"/>
+          </svg>
         </div>
         <div class="min-w-0">
           <p id="header-greeting" class="text-xs font-medium tracking-wide uppercase" style="color: var(--text-secondary);">Good Evening</p>
-          <h1 class="text-lg sm:text-xl font-semibold tracking-tight truncate">Aurelia Finance</h1>
+          <h1 class="text-base sm:text-xl font-bold tracking-tight truncate">Aurelia</h1>
           <p id="header-date" class="text-xs truncate" style="color: var(--text-secondary);"></p>
         </div>
       </div>
@@ -1296,7 +1580,7 @@
          2. STATE MANAGEMENT & PERSISTENCE
          ========================================================= */
       let state = loadState();
-      let cloudSyncState = { configured: false, client: null, user: null, status: 'local', lastSynced: '', pushTimer: null, channel: null };
+      let cloudSyncState = { configured: false, client: null, user: null, status: 'local', lastSynced: '', pushTimer: null, channel: null, hydrated: false };
       let currentTab = 'home';
       let homeChartMode = 'monthly';
       let txViewMode = 'list';
@@ -1304,6 +1588,8 @@
       let txCalendarYear = new Date().getFullYear();
       let analyticsSubTab = 'overview';
       let analyticsRange = 'this_month';
+      let drillCategoryId = null;
+      let drillSubcategory = null;
       let customDateFrom = isoDaysAgo(30);
       let customDateTo = isoDaysAgo(0);
       let txFilters = { search: '', category: 'all', type: 'all', paymentMethod: 'all', account: 'all', sort: 'newest' };
@@ -1406,11 +1692,20 @@
         scheduleCloudPush();
       }
 
+      function persistLocalOnly() {
+        const serialized = JSON.stringify(state);
+        try { localStorage.setItem(STORAGE_KEY, serialized); } catch (e) {}
+        try { sessionStorage.setItem(STORAGE_KEY, serialized); } catch (e) {}
+        try { window.name = WIN_NAME_PREFIX + serialized; } catch (e) {}
+        writeIDB(state);
+      }
+
       function scheduleCloudPush() {
-        if (!cloudSyncState.client || !cloudSyncState.user) return;
+        // NEVER auto-push to cloud before initial cloud pull (hydration) completes!
+        if (!cloudSyncState.client || !cloudSyncState.user || !cloudSyncState.hydrated) return;
         clearTimeout(cloudSyncState.pushTimer);
         cloudSyncState.status = 'syncing';
-        cloudSyncState.pushTimer = setTimeout(() => { pushStateToCloud(); }, 650);
+        cloudSyncState.pushTimer = setTimeout(() => { pushStateToCloud(false); }, 650);
       }
 
       async function pushStateToCloud(showNotify = false) {
@@ -1446,31 +1741,59 @@
             .eq('user_id', cloudSyncState.user.id)
             .maybeSingle();
           if (error) throw error;
-          if (data && data.state_json) {
+
+          if (data && data.state_json && Object.keys(data.state_json).length > 0) {
             const remote = normalizeLoadedState(data.state_json);
             if (remote) {
-              const remoteTs = Number(remote._savedAt || Date.parse(data.updated_at) || 0);
-              const localTs = Number(state._savedAt || 0);
-              if (remoteTs >= localTs || state.hasDemoData) {
+              const localRealTx = (state.transactions || []).filter(t => !t.isDemo);
+              const remoteRealTx = (remote.transactions || []).filter(t => !t.isDemo);
+
+              if (localRealTx.length === 0) {
+                // Fresh / empty / demo device logging in -> ALWAYS show existing cloud data! Never overwrite cloud with 0 data!
                 state = remote;
-                const serialized = JSON.stringify(state);
-                try { localStorage.setItem(STORAGE_KEY, serialized); } catch (e) {}
-                try { sessionStorage.setItem(STORAGE_KEY, serialized); } catch (e) {}
-                writeIDB(state);
-              } else {
+                persistLocalOnly();
+              } else if (remoteRealTx.length === 0) {
+                // Cloud had no real transactions yet, local has real ones -> keep local and push up
+                cloudSyncState.hydrated = true;
                 await pushStateToCloud(false);
+              } else {
+                // Both devices have real transactions -> Non-destructive union merge by tx ID (cloud settings/budgets take priority)
+                const mergedMap = new Map();
+                remote.transactions.forEach(t => mergedMap.set(t.id, t));
+                let addedLocal = false;
+                localRealTx.forEach(t => {
+                  if (!mergedMap.has(t.id)) {
+                    mergedMap.set(t.id, t);
+                    addedLocal = true;
+                  }
+                });
+                state = {
+                  ...remote,
+                  transactions: Array.from(mergedMap.values()),
+                  hasDemoData: false,
+                  _savedAt: Math.max(Number(remote._savedAt || 0), Number(state._savedAt || 0), Date.now())
+                };
+                persistLocalOnly();
+                if (addedLocal) {
+                  cloudSyncState.hydrated = true;
+                  await pushStateToCloud(false);
+                }
               }
             }
           } else {
+            // Brand-new Supabase user with no cloud row yet -> upload current state once
+            cloudSyncState.hydrated = true;
             await pushStateToCloud(false);
           }
+
+          cloudSyncState.hydrated = true;
           cloudSyncState.status = 'synced';
           cloudSyncState.lastSynced = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-          if (showNotify) showToast('Cloud data synced!', 'success');
+          if (showNotify) showToast('Cloud data loaded & synced!', 'success');
           renderApp();
         } catch (err) {
           cloudSyncState.status = 'error';
-          if (showNotify) showToast('Could not pull cloud state', 'warning');
+          if (showNotify) showToast('Could not pull cloud state: ' + (err.message || ''), 'warning');
         }
       }
 
@@ -1523,6 +1846,7 @@
               await pullStateFromCloud(false);
               subscribeRealtimeSync();
             } else {
+              cloudSyncState.hydrated = false;
               cloudSyncState.status = 'local';
               if (cloudSyncState.channel) {
                 try { client.removeChannel(cloudSyncState.channel); } catch (e) {}
@@ -1601,9 +1925,12 @@
       function showToast(message, variant = 'success') {
         const container = document.getElementById('toast-container');
         if (!container) return;
-        container.classList.remove('view-transition');
-        void container.offsetWidth;
-        container.classList.add('view-transition');
+        if (window.__lastRenderedTab !== currentTab) {
+          window.__lastRenderedTab = currentTab;
+          container.classList.remove('view-transition');
+          void container.offsetWidth;
+          container.classList.add('view-transition');
+        }
         const colors = {
           success: 'border-emeraldPos/40 text-emeraldPos',
           warning: 'border-amber-400/40 text-amber-300',
@@ -1612,7 +1939,7 @@
         };
         const icons = { success: 'check-circle-2', warning: 'alert-triangle', error: 'x-circle', info: 'info' };
         const el = document.createElement('div');
-        el.className = `glass-modal pointer-events-auto rounded-2xl px-4 py-3 flex items-center gap-2.5 text-sm shadow-2xl animate-in ${colors[variant] || colors.info}`;
+        el.className = `toast-rpg-item glass-modal pointer-events-auto rounded-2xl px-4 py-3 flex items-center gap-2.5 text-sm shadow-2xl ${colors[variant] || colors.info}`;
         el.innerHTML = `<i data-lucide="${icons[variant] || 'info'}" class="w-4 h-4 shrink-0"></i><span style="color: var(--text-primary);">${escapeHtml(message)}</span>`;
         container.appendChild(el);
         lucide.createIcons({ nodes: [el] });
@@ -1908,7 +2235,13 @@
         let totalRefunds = 0;
         let totalTransfers = 0;
         const byCategory = {};
+        const byCategoryMeta = {};
         const byMerchant = {};
+        const byPaymentMethod = {};
+        const byAccount = {};
+        const byScope = { personal: 0, business: 0 };
+        const byWeekday = [0, 0, 0, 0, 0, 0, 0]; // Sun..Sat
+        let spendCount = 0;
         let highestTx = null;
 
         for (const tx of txList) {
@@ -1922,14 +2255,47 @@
             totalTransfers += amt;
           } else if (isSpendType(tx.type)) {
             totalSpend += amt;
-            byCategory[tx.category] = (byCategory[tx.category] || 0) + amt;
+            spendCount += 1;
+            const catId = tx.category || 'misc';
+            const subName = (tx.subcategory || '').trim() || 'General';
+            byCategory[catId] = (byCategory[catId] || 0) + amt;
+            if (!byCategoryMeta[catId]) {
+              byCategoryMeta[catId] = { total: 0, count: 0, subcats: {}, txns: [] };
+            }
+            byCategoryMeta[catId].total += amt;
+            byCategoryMeta[catId].count += 1;
+            byCategoryMeta[catId].txns.push(tx);
+            if (!byCategoryMeta[catId].subcats[subName]) {
+              byCategoryMeta[catId].subcats[subName] = { total: 0, count: 0, txns: [] };
+            }
+            byCategoryMeta[catId].subcats[subName].total += amt;
+            byCategoryMeta[catId].subcats[subName].count += 1;
+            byCategoryMeta[catId].subcats[subName].txns.push(tx);
+
             byMerchant[tx.merchant] = (byMerchant[tx.merchant] || 0) + amt;
+            const pm = tx.paymentMethod || 'Other';
+            byPaymentMethod[pm] = (byPaymentMethod[pm] || 0) + amt;
+            const acc = tx.account || 'Other';
+            byAccount[acc] = (byAccount[acc] || 0) + amt;
+            if (tx.scope === 'business') byScope.business += amt;
+            else byScope.personal += amt;
+
+            if (tx.date) {
+              const dt = new Date(tx.date + 'T00:00:00');
+              if (!isNaN(dt.getTime())) byWeekday[dt.getDay()] += amt;
+            }
             if (!highestTx || amt > Number(highestTx.amount)) highestTx = tx;
           }
         }
         const netSpending = Math.max(0, totalSpend - totalRefunds);
         const monthlySavings = totalIncome - netSpending;
-        return { totalSpend, totalIncome, totalRefunds, totalTransfers, netSpending, monthlySavings, byCategory, byMerchant, highestTx };
+        const savingsRate = totalIncome > 0 ? Math.round((monthlySavings / totalIncome) * 100) : 0;
+        const avgTx = spendCount > 0 ? totalSpend / spendCount : 0;
+        return {
+          totalSpend, totalIncome, totalRefunds, totalTransfers, netSpending, monthlySavings,
+          savingsRate, spendCount, avgTx, byCategory, byCategoryMeta, byMerchant,
+          byPaymentMethod, byAccount, byScope, byWeekday, highestTx
+        };
       }
 
       function getBudgetAlerts() {
@@ -2005,7 +2371,7 @@
               <div class="min-w-0">
                 <div class="flex items-center gap-2">
                   <p class="font-medium text-sm truncate">${escapeHtml(tx.merchant)}</p>
-                  ${tx.scope === 'business' ? '<span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-periwinkle/20 text-periwinkle">Biz</span>' : ''}
+                  ${tx.scope === 'business' ? '<span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-periwinkle/20 text-periwinkle">Biz</span>' : ''}${tx.receiptImage ? '<i data-lucide="image" class="w-3.5 h-3.5 text-periwinkle shrink-0" title="Bill attached"></i>' : ''}
                 </div>
                 <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs mt-0.5" style="color: var(--text-secondary);">
                   <span>${escapeHtml(cat.name)}</span>
@@ -2062,7 +2428,7 @@
 
         // Greeting & date
         const hr = new Date().getHours();
-        const greet = hr < 12 ? 'Good Morning' : hr < 17 ? 'Good Afternoon' : 'Good Evening';
+        const greet = hr < 12 ? 'Good Morning, Anas' : hr < 17 ? 'Good Afternoon, Anas' : 'Good Evening, Anas';
         const gEl = document.getElementById('header-greeting');
         if (gEl) gEl.textContent = greet;
         const dEl = document.getElementById('header-date');
@@ -2199,6 +2565,36 @@
                 <p class="text-[11px]" style="color: var(--text-secondary);">Budgets & PDF report</p>
               </div>
             </button>
+
+            <button id="qa-scan-receipt" type="button" class="col-span-2 sm:col-span-2 cartridge-btn btn-press flex items-center justify-between gap-2 text-left" style="background: #7CC4EE !important;">
+              <span class="cartridge-shine"></span>
+              <div class="cartridge-inner-label flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="w-8 h-8 flex items-center justify-center shrink-0 bg-amberGold border-2 border-ink text-ink">
+                    <i data-lucide="camera" class="w-4 h-4"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="font-pixel font-bold text-xs uppercase truncate">05 · Scan Bill / Screenshot ▸</p>
+                    <p class="text-[11px] truncate" style="color: var(--text-secondary);">Camera or UPI screenshot</p>
+                  </div>
+                </div>
+              </div>
+            </button>
+
+            <button id="qa-import-statement" type="button" class="col-span-2 sm:col-span-2 cartridge-btn btn-press flex items-center justify-between gap-2 text-left" style="background: #DFC79C !important;">
+              <span class="cartridge-shine"></span>
+              <div class="cartridge-inner-label flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="w-8 h-8 flex items-center justify-center shrink-0 bg-ink text-amberGold border-2 border-ink">
+                    <i data-lucide="file-up" class="w-4 h-4"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="font-pixel font-bold text-xs uppercase truncate">06 · Bank Statement (PDF/CSV) ▸</p>
+                    <p class="text-[11px] truncate" style="color: var(--text-secondary);">Bulk fetch & review txns</p>
+                  </div>
+                </div>
+              </div>
+            </button>
           </section>
 
           <!-- Interactive Spending Analytics Widget -->
@@ -2266,7 +2662,7 @@
           config = {
             type: 'doughnut',
             data: { labels: labels.length ? labels : ['No spend'], datasets: [{ data: data.length ? data : [1], backgroundColor: colors.length ? colors : ['#334155'], borderWidth: 2, borderColor: '#14111D', hoverOffset: 8 }] },
-            options: { responsive: true, maintainAspectRatio: false, animation: { duration: 700, easing: 'easeOutQuart' }, cutout: '66%', plugins: { legend: { position: 'right', labels: { color: tickColor, boxWidth: 10, padding: 12 } } } }
+            options: { responsive: true, maintainAspectRatio: false, devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2), animation: { duration: 360, easing: 'easeOutQuad' }, cutout: '66%', plugins: { legend: { position: 'right', labels: { color: tickColor, boxWidth: 10, padding: 12 } } } }
           };
         } else if (homeChartMode === 'weekly') {
           const labels = [];
@@ -2281,7 +2677,7 @@
           config = {
             type: 'bar',
             data: { labels, datasets: [{ label: 'Daily Spend', data: values, backgroundColor: '#8BD3A8', borderRadius: 0, borderColor: '#14111D', borderWidth: 2 }] },
-            options: { responsive: true, maintainAspectRatio: false, animation: { duration: 700, easing: 'easeOutQuart' }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { grid: { color: gridColor }, ticks: { color: tickColor } } } }
+            options: { responsive: true, maintainAspectRatio: false, devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2), animation: { duration: 360, easing: 'easeOutQuad' }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { grid: { color: gridColor }, ticks: { color: tickColor } } } }
           };
         } else if (homeChartMode === 'daily') {
           const labels = [];
@@ -2295,7 +2691,7 @@
           config = {
             type: 'line',
             data: { labels, datasets: [{ label: 'Expenditure', data: values, borderColor: '#8B9EFF', backgroundColor: 'rgba(139, 158, 255, 0.16)', fill: true, tension: 0.38, pointRadius: 3 }] },
-            options: { responsive: true, maintainAspectRatio: false, animation: { duration: 700, easing: 'easeOutQuart' }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { grid: { color: gridColor }, ticks: { color: tickColor } } } }
+            options: { responsive: true, maintainAspectRatio: false, devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2), animation: { duration: 360, easing: 'easeOutQuad' }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { grid: { color: gridColor }, ticks: { color: tickColor } } } }
           };
         } else if (homeChartMode === 'inc_exp') {
           const months = [];
@@ -2320,7 +2716,7 @@
                 { label: 'Net Spending', data: exp, backgroundColor: '#EC7670', borderRadius: 0, borderColor: '#14111D', borderWidth: 2 }
               ]
             },
-            options: { responsive: true, maintainAspectRatio: false, animation: { duration: 700, easing: 'easeOutQuart' }, plugins: { legend: { labels: { color: tickColor } } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { grid: { color: gridColor }, ticks: { color: tickColor } } } }
+            options: { responsive: true, maintainAspectRatio: false, devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2), animation: { duration: 360, easing: 'easeOutQuad' }, plugins: { legend: { labels: { color: tickColor } } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { grid: { color: gridColor }, ticks: { color: tickColor } } } }
           };
         } else if (homeChartMode === 'trend') {
           const months = [];
@@ -2336,7 +2732,7 @@
           config = {
             type: 'line',
             data: { labels: months, datasets: [{ label: 'Monthly Spending Trend', data: exp, borderColor: '#14111D', backgroundColor: 'rgba(139, 211, 168, 0.45)', fill: true, tension: 0.35, pointBackgroundColor: '#A8F0D0', pointRadius: 4 }] },
-            options: { responsive: true, maintainAspectRatio: false, animation: { duration: 700, easing: 'easeOutQuart' }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { grid: { color: gridColor }, ticks: { color: tickColor } } } }
+            options: { responsive: true, maintainAspectRatio: false, devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2), animation: { duration: 360, easing: 'easeOutQuad' }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { grid: { color: gridColor }, ticks: { color: tickColor } } } }
           };
         } else {
           // Monthly top categories horizontal bar
@@ -2347,7 +2743,7 @@
               labels: entries.length ? entries.map(([id]) => getCategoryById(id).name) : ['No spend'],
               datasets: [{ label: 'This Month', data: entries.length ? entries.map(([, v]) => v) : [0], backgroundColor: entries.length ? entries.map(([id]) => getCategoryById(id).color) : ['#334155'], borderRadius: 0, borderColor: '#14111D', borderWidth: 2 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, animation: { duration: 700, easing: 'easeOutQuart' }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { grid: { color: gridColor }, ticks: { color: tickColor } } } }
+            options: { responsive: true, maintainAspectRatio: false, devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2), animation: { duration: 360, easing: 'easeOutQuad' }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { grid: { color: gridColor }, ticks: { color: tickColor } } } }
           };
         }
 
@@ -2395,6 +2791,9 @@
                   <button type="button" data-tx-view="list" class="tx-view-toggle btn-press px-3 py-1.5 rounded-xl text-xs font-medium ${txViewMode === 'list' ? 'bg-mint/20 text-mint' : ''}">List</button>
                   <button type="button" data-tx-view="calendar" class="tx-view-toggle btn-press px-3 py-1.5 rounded-xl text-xs font-medium ${txViewMode === 'calendar' ? 'bg-mint/20 text-mint' : ''}">Calendar</button>
                 </div>
+                <button id="btn-tx-import-stmt" type="button" class="primary-glow-btn btn-press px-3 py-2 text-xs flex items-center gap-1.5">
+                  <i data-lucide="file-up" class="w-3.5 h-3.5"></i> PDF/CSV
+                </button>
                 <button id="btn-tx-export-csv" type="button" class="glass-card btn-press px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5">
                   <i data-lucide="download" class="w-3.5 h-3.5"></i> CSV
                 </button>
@@ -2582,25 +2981,250 @@
               </div>
             </section>
 
+            <!-- INTERACTIVE 3-LEVEL DRILL-DOWN: CATEGORY -> SUBCATEGORY -> TRANSACTIONS -->
+            <section class="glass-card rounded-3xl p-4 sm:p-5 space-y-4 animate-in">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 class="font-semibold text-sm sm:text-base flex items-center gap-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-periwinkle"></i>
+                    Interactive Category & Subcategory Explorer
+                  </h3>
+                  <p class="text-[11px]" style="color: var(--text-secondary);">Click any category to inspect its subcategories, then click a subcategory to view its transactions.</p>
+                </div>
+                <!-- Breadcrumb Trail -->
+                <div id="drilldown-breadcrumbs" class="flex flex-wrap items-center gap-1.5 text-xs font-pixel font-bold uppercase">
+                  ${renderDrillBreadcrumbs()}
+                </div>
+              </div>
+
+              <div id="drilldown-panel-body">${renderDrillDownBody(s)}</div>
+            </section>
+
+            <!-- Deep-Dive Breakdown: Payment Methods, Accounts & Weekday Pattern -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-in">
+              <div class="glass-card rounded-3xl p-4 space-y-3">
+                <h3 class="font-semibold text-sm">Payment Methods</h3>
+                <div class="space-y-2">
+                  ${Object.entries(s.byPaymentMethod).sort((a, b) => b[1] - a[1]).map(([pm, val]) => {
+                    const pct = s.totalSpend > 0 ? Math.round((val / s.totalSpend) * 100) : 0;
+                    return `
+                      <div class="space-y-1">
+                        <div class="flex justify-between text-xs"><span class="font-medium">${escapeHtml(pm)}</span><span class="tabular-nums font-semibold ${privClass()}">${formatCurrency(val)} (${pct}%)</span></div>
+                        <div class="h-2 border border-ink" style="background: var(--input-bg);"><div class="h-full bg-periwinkle" style="width:${pct}%"></div></div>
+                      </div>
+                    `;
+                  }).join('') || '<p class="text-xs" style="color: var(--text-secondary);">No spending data</p>'}
+                </div>
+              </div>
+
+              <div class="glass-card rounded-3xl p-4 space-y-3">
+                <h3 class="font-semibold text-sm">Accounts & Scope Split</h3>
+                <div class="space-y-2">
+                  ${Object.entries(s.byAccount).sort((a, b) => b[1] - a[1]).map(([acc, val]) => {
+                    const pct = s.totalSpend > 0 ? Math.round((val / s.totalSpend) * 100) : 0;
+                    return `
+                      <div class="space-y-1">
+                        <div class="flex justify-between text-xs"><span class="font-medium truncate">${escapeHtml(acc)}</span><span class="tabular-nums font-semibold ${privClass()}">${formatCurrency(val)} (${pct}%)</span></div>
+                        <div class="h-2 border border-ink" style="background: var(--input-bg);"><div class="h-full bg-mint" style="width:${pct}%"></div></div>
+                      </div>
+                    `;
+                  }).join('') || '<p class="text-xs" style="color: var(--text-secondary);">No account spend</p>'}
+                </div>
+                <div class="pt-2 border-t flex justify-between text-[11px] tabular-nums" style="border-color: var(--border-ink);">
+                  <span>Personal: <strong class="${privClass()}">${formatCurrency(s.byScope.personal)}</strong></span>
+                  <span>Business: <strong class="${privClass()}">${formatCurrency(s.byScope.business)}</strong></span>
+                </div>
+              </div>
+
+              <div class="glass-card rounded-3xl p-4 space-y-2">
+                <h3 class="font-semibold text-sm">Spending by Day of Week</h3>
+                <div class="relative h-44"><canvas id="analytics-weekday-chart"></canvas></div>
+              </div>
+            </section>
+
             <!-- Top Highlights -->
-            <section class="glass-card rounded-3xl p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 animate-in">
+            <section class="glass-card rounded-3xl p-4 grid grid-cols-1 sm:grid-cols-4 gap-3 animate-in">
               <div>
-                <p class="text-xs" style="color: var(--text-secondary);">Top Spending Category</p>
-                <p class="font-semibold text-sm mt-1">${topCatEntry ? `${escapeHtml(getCategoryById(topCatEntry[0]).name)} (${formatCurrency(topCatEntry[1])})` : '—'}</p>
+                <p class="text-[11px]" style="color: var(--text-secondary);">Top Category</p>
+                <p class="font-semibold text-xs sm:text-sm mt-0.5">${topCatEntry ? `${escapeHtml(getCategoryById(topCatEntry[0]).name)} (${formatCurrency(topCatEntry[1])})` : '—'}</p>
               </div>
               <div>
-                <p class="text-xs" style="color: var(--text-secondary);">Most Frequent / Top Merchant</p>
-                <p class="font-semibold text-sm mt-1">${topMerchEntry ? `${escapeHtml(topMerchEntry[0])} (${formatCurrency(topMerchEntry[1])})` : '—'}</p>
+                <p class="text-[11px]" style="color: var(--text-secondary);">Top Merchant</p>
+                <p class="font-semibold text-xs sm:text-sm mt-0.5">${topMerchEntry ? `${escapeHtml(topMerchEntry[0])} (${formatCurrency(topMerchEntry[1])})` : '—'}</p>
               </div>
               <div>
-                <p class="text-xs" style="color: var(--text-secondary);">Internal Transfers Excluded</p>
-                <p class="font-semibold text-sm mt-1 tabular-nums ${privClass()}">${formatCurrency(s.totalTransfers)}</p>
+                <p class="text-[11px]" style="color: var(--text-secondary);">Savings Rate / Avg Tx</p>
+                <p class="font-semibold text-xs sm:text-sm mt-0.5 tabular-nums">${s.savingsRate}% • ${formatCurrency(s.avgTx)}</p>
+              </div>
+              <div>
+                <p class="text-[11px]" style="color: var(--text-secondary);">Internal Transfers Excluded</p>
+                <p class="font-semibold text-xs sm:text-sm mt-0.5 tabular-nums ${privClass()}">${formatCurrency(s.totalTransfers)}</p>
               </div>
             </section>
           ` : analyticsSubTab === 'budgets' ? renderBudgetsTab() : renderRecurringTab()}
         `;
 
-        if (analyticsSubTab === 'overview') renderAnalyticsCharts(s);
+        if (analyticsSubTab === 'overview') requestAnimationFrame(() => renderAnalyticsCharts(s));
+      }
+
+      function renderDrillBreadcrumbs() {
+        return `
+          <button type="button" id="drill-bc-root" class="btn-press px-2 py-1 border-2 border-ink ${!drillCategoryId ? 'bg-amberGold text-ink' : 'bg-parchment text-ink'}">All Categories</button>
+          ${drillCategoryId ? `
+            <span>▸</span>
+            <button type="button" id="drill-bc-cat" class="btn-press px-2 py-1 border-2 border-ink ${!drillSubcategory ? 'bg-amberGold text-ink' : 'bg-parchment text-ink'}">${escapeHtml(getCategoryById(drillCategoryId).name)}</button>
+          ` : ''}
+          ${drillCategoryId && drillSubcategory ? `
+            <span>▸</span>
+            <span class="px-2 py-1 border-2 border-ink bg-amberGold text-ink">${escapeHtml(drillSubcategory)}</span>
+          ` : ''}
+        `;
+      }
+
+      function bindDrillDownEvents() {
+        document.getElementById('drill-bc-root')?.addEventListener('click', () => { drillCategoryId = null; drillSubcategory = null; updateDrillDownInPlace(); });
+        document.getElementById('drill-bc-cat')?.addEventListener('click', () => { drillSubcategory = null; updateDrillDownInPlace(); });
+        document.querySelectorAll('.drill-cat-btn').forEach(btn => {
+          btn.addEventListener('click', () => { drillCategoryId = btn.dataset.drillCat; drillSubcategory = null; updateDrillDownInPlace(); });
+        });
+        document.querySelectorAll('.drill-sub-btn').forEach(btn => {
+          btn.addEventListener('click', () => { drillSubcategory = btn.dataset.drillSub; updateDrillDownInPlace(); });
+        });
+        document.querySelectorAll('#drilldown-panel-body .tx-row-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const tx = state.transactions.find(t => t.id === btn.dataset.txId);
+            if (tx) openConfirmationModal({ ...tx, confidence: {} }, tx.id);
+          });
+        });
+      }
+
+      function updateDrillDownInPlace() {
+        const bcEl = document.getElementById('drilldown-breadcrumbs');
+        const bodyEl = document.getElementById('drilldown-panel-body');
+        if (!bcEl || !bodyEl) { renderApp(); return; }
+        const rangedTx = filterTransactionsByRange(analyticsRange);
+        const summary = computeSummary(rangedTx);
+        bcEl.innerHTML = renderDrillBreadcrumbs();
+        bodyEl.classList.remove('drill-swap');
+        bodyEl.innerHTML = renderDrillDownBody(summary);
+        void bodyEl.offsetWidth;
+        bodyEl.classList.add('drill-swap');
+        lucide.createIcons({ nodes: [bodyEl] });
+        bindDrillDownEvents();
+      }
+
+      function renderDrillDownBody(s) {
+        // Level 1: All Categories Grid
+        if (!drillCategoryId) {
+          const cats = Object.entries(s.byCategoryMeta).sort((a, b) => b[1].total - a[1].total);
+          if (!cats.length) {
+            return `<p class="text-xs py-6 text-center" style="color: var(--text-secondary);">No expenses recorded in this date range.</p>`;
+          }
+          return `
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              ${cats.map(([catId, meta]) => {
+                const cat = getCategoryById(catId);
+                const share = s.totalSpend > 0 ? Math.round((meta.total / s.totalSpend) * 100) : 0;
+                const subCount = Object.keys(meta.subcats).length;
+                const limit = Number(state.budgets.categories[catId]) || 0;
+                const bPct = limit > 0 ? Math.min(100, Math.round((meta.total / limit) * 100)) : 0;
+                return `
+                  <button type="button" data-drill-cat="${escapeHtml(catId)}" class="drill-cat-btn btn-press text-left p-3 border-2 border-ink space-y-2 hover:bg-amberGold/15" style="background: var(--input-bg); box-shadow: 3px 3px 0px #14111D;">
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <div class="w-8 h-8 flex items-center justify-center shrink-0 border-2 border-ink" style="background: ${cat.color}33; color: #14111D;">
+                          <i data-lucide="${escapeHtml(cat.icon)}" class="w-4 h-4"></i>
+                        </div>
+                        <div class="min-w-0">
+                          <p class="font-pixel font-bold text-xs uppercase truncate">${escapeHtml(cat.name)}</p>
+                          <p class="text-[10px]" style="color: var(--text-secondary);">${subCount} subcat${subCount === 1 ? '' : 's'} • ${meta.count} txns</p>
+                        </div>
+                      </div>
+                      <div class="text-right shrink-0">
+                        <p class="font-bold text-xs tabular-nums ${privClass()}">${formatCurrency(meta.total)}</p>
+                        <p class="text-[10px] font-semibold" style="color: var(--text-secondary);">${share}% share ▸</p>
+                      </div>
+                    </div>
+                    <div class="h-2 border border-ink" style="background: var(--surface-card);">
+                      <div class="h-full" style="width:${limit > 0 ? bPct : share}%; background:${limit > 0 && meta.total > limit ? '#EC7670' : cat.color};"></div>
+                    </div>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          `;
+        }
+
+        const meta = s.byCategoryMeta[drillCategoryId];
+        const cat = getCategoryById(drillCategoryId);
+        if (!meta) {
+          drillCategoryId = null;
+          drillSubcategory = null;
+          return renderDrillDownBody(s);
+        }
+
+        // Level 2: Inside a Category -> Show Subcategories + All Category Transactions
+        if (!drillSubcategory) {
+          const subs = Object.entries(meta.subcats).sort((a, b) => b[1].total - a[1].total);
+          const avgCatTx = meta.count > 0 ? meta.total / meta.count : 0;
+          const shareOfAll = s.totalSpend > 0 ? Math.round((meta.total / s.totalSpend) * 100) : 0;
+
+          return `
+            <div class="grid grid-cols-3 gap-2 p-3 border-2 border-ink text-center" style="background: var(--input-bg);">
+              <div>
+                <p class="text-[10px] uppercase" style="color: var(--text-secondary);">Category Total</p>
+                <p class="font-bold text-sm tabular-nums ${privClass()}">${formatCurrency(meta.total)}</p>
+              </div>
+              <div>
+                <p class="text-[10px] uppercase" style="color: var(--text-secondary);">Share / Count</p>
+                <p class="font-bold text-sm tabular-nums">${shareOfAll}% • ${meta.count} txns</p>
+              </div>
+              <div>
+                <p class="text-[10px] uppercase" style="color: var(--text-secondary);">Avg Ticket</p>
+                <p class="font-bold text-sm tabular-nums ${privClass()}">${formatCurrency(avgCatTx)}</p>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <p class="font-pixel text-[11px] font-bold uppercase" style="color: var(--text-secondary);">Subcategories in ${escapeHtml(cat.name)} (Click to view transactions)</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                ${subs.map(([subName, sm]) => {
+                  const subPct = meta.total > 0 ? Math.round((sm.total / meta.total) * 100) : 0;
+                  return `
+                    <button type="button" data-drill-sub="${escapeHtml(subName)}" class="drill-sub-btn btn-press text-left p-3 border-2 border-ink space-y-1.5 hover:bg-amberGold/15" style="background: var(--surface-card); box-shadow: 3px 3px 0px #14111D;">
+                      <div class="flex items-center justify-between gap-2">
+                        <div>
+                          <p class="font-pixel font-bold text-xs uppercase">${escapeHtml(subName)}</p>
+                          <p class="text-[10px]" style="color: var(--text-secondary);">${sm.count} transaction${sm.count === 1 ? '' : 's'} • Avg ${formatCurrency(sm.total / sm.count)}</p>
+                        </div>
+                        <div class="text-right">
+                          <p class="font-bold text-xs tabular-nums ${privClass()}">${formatCurrency(sm.total)}</p>
+                          <p class="text-[10px] font-semibold text-periwinkle">${subPct}% of cat ▸</p>
+                        </div>
+                      </div>
+                      <div class="h-2 border border-ink" style="background: var(--input-bg);">
+                        <div class="h-full" style="width:${subPct}%; background:${cat.color};"></div>
+                      </div>
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        // Level 3: Inside Subcategory -> Show Itemized Transactions!
+        const subMeta = meta.subcats[drillSubcategory];
+        const txList = subMeta ? [...subMeta.txns].sort((a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || ''))) : [];
+        return `
+          <div class="flex flex-wrap items-center justify-between gap-2 p-3 border-2 border-ink text-xs" style="background: var(--input-bg);">
+            <span><strong>${escapeHtml(cat.name)} › ${escapeHtml(drillSubcategory)}</strong> • ${txList.length} transaction${txList.length === 1 ? '' : 's'}</span>
+            <span class="font-bold tabular-nums ${privClass()}">${formatCurrency(subMeta ? subMeta.total : 0)}</span>
+          </div>
+          <div class="space-y-2">
+            ${txList.length ? txList.map(renderTransactionRow).join('') : '<p class="text-xs py-4 text-center">No transactions in this subcategory.</p>'}
+          </div>
+        `;
       }
 
       function renderAnalyticsCharts(summary) {
@@ -2617,7 +3241,36 @@
               labels: entries.length ? entries.map(([id]) => getCategoryById(id).name) : ['No data'],
               datasets: [{ data: entries.length ? entries.map(([, v]) => v) : [1], backgroundColor: entries.length ? entries.map(([id]) => getCategoryById(id).color) : ['#334155'], borderWidth: 2, borderColor: '#14111D' }]
             },
-            options: { responsive: true, maintainAspectRatio: false, animation: { duration: 700, easing: 'easeOutQuart' }, cutout: '64%', plugins: { legend: { position: 'right', labels: { color: tickColor, boxWidth: 10 } } } }
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2), animation: { duration: 360, easing: 'easeOutQuad' },
+              cutout: '64%',
+              onClick: (_evt, elements) => {
+                if (elements && elements.length > 0 && entries[elements[0].index]) {
+                  drillCategoryId = entries[elements[0].index][0];
+                  drillSubcategory = null;
+                  updateDrillDownInPlace();
+                }
+              },
+              plugins: { legend: { position: 'right', labels: { color: tickColor, boxWidth: 10 } } }
+            }
+          });
+        }
+
+        const c3 = document.getElementById('analytics-weekday-chart');
+        if (c3) {
+          activeCharts.anWeekday = new Chart(c3.getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+              datasets: [{ label: 'Spend', data: summary.byWeekday, backgroundColor: '#F5A94C', borderColor: '#14111D', borderWidth: 2 }]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2), animation: { duration: 360, easing: 'easeOutQuad' },
+              plugins: { legend: { display: false } },
+              scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { grid: { color: gridColor }, ticks: { color: tickColor } } }
+            }
           });
         }
 
@@ -2630,7 +3283,7 @@
               labels: mEntries.length ? mEntries.map(([m]) => m.slice(0, 18)) : ['No data'],
               datasets: [{ label: 'Spent', data: mEntries.length ? mEntries.map(([, v]) => v) : [0], backgroundColor: '#A79BF2', borderRadius: 0, borderColor: '#14111D', borderWidth: 2 }]
             },
-            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: { duration: 700, easing: 'easeOutQuart' }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: gridColor }, ticks: { color: tickColor } }, y: { grid: { display: false }, ticks: { color: tickColor } } } }
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2), animation: { duration: 360, easing: 'easeOutQuad' }, plugins: { legend: { display: false } }, scales: { x: { grid: { color: gridColor }, ticks: { color: tickColor } }, y: { grid: { display: false }, ticks: { color: tickColor } } } }
           });
         }
       }
@@ -2901,25 +3554,35 @@
       /* =========================================================
          10. MODALS: SMS PARSER, CONFIRMATION SCREEN, DETAIL EDIT
          ========================================================= */
+      let modalCloseTimer = null;
+
       function openModal(html) {
         const root = document.getElementById('modal-root');
         if (!root) return;
-        root.className = 'fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm';
+        clearTimeout(modalCloseTimer);
+        root.className = 'fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm modal-open';
         root.innerHTML = html;
         lucide.createIcons({ nodes: [root] });
-        root.addEventListener('click', function onBackdrop(e) {
-          if (e.target === root) {
-            closeModal();
-            root.removeEventListener('click', onBackdrop);
-          }
-        });
+        root.onclick = (e) => {
+          if (e.target === root) closeModal();
+        };
       }
 
-      function closeModal() {
+      function closeModal(immediate = false) {
         const root = document.getElementById('modal-root');
-        if (!root) return;
-        root.className = 'fixed inset-0 z-50 hidden';
-        root.innerHTML = '';
+        if (!root || root.classList.contains('hidden')) return;
+        clearTimeout(modalCloseTimer);
+        if (immediate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          root.className = 'fixed inset-0 z-50 hidden';
+          root.innerHTML = '';
+          return;
+        }
+        root.classList.remove('modal-open');
+        root.classList.add('modal-closing');
+        modalCloseTimer = setTimeout(() => {
+          root.className = 'fixed inset-0 z-50 hidden';
+          root.innerHTML = '';
+        }, 185);
       }
 
       function openSMSParserModal(prefillText = '') {
@@ -2963,8 +3626,10 @@
               </button>
             </div>
 
-            <div class="mt-4 pt-3 border-t flex items-center justify-between text-xs" style="border-color: var(--glass-border); color: var(--text-secondary);">
-              <span>Prefer manual entry?</span>
+            <div class="mt-4 pt-3 border-t flex flex-wrap items-center justify-between gap-2 text-xs" style="border-color: var(--border-ink); color: var(--text-secondary);">
+              <button id="btn-switch-receipt" type="button" class="glass-card btn-press px-3 py-1.5 text-xs font-pixel font-bold uppercase flex items-center gap-1.5">
+                <i data-lucide="camera" class="w-3.5 h-3.5"></i> Scan Bill / Screenshot ▸
+              </button>
               <button id="btn-switch-manual" type="button" class="text-mint font-semibold hover:underline">Enter Manually Instead</button>
             </div>
           </div>
@@ -2991,6 +3656,7 @@
             showToast('Clipboard access blocked — press Ctrl+V / Cmd+V to paste.', 'warning');
           }
         });
+        document.getElementById('btn-switch-receipt')?.addEventListener('click', () => openReceiptScannerModal());
         document.getElementById('btn-switch-manual')?.addEventListener('click', () => {
           openConfirmationModal({
             amount: '', merchant: '', date: isoDaysAgo(0), time: '', type: 'expense',
@@ -3041,6 +3707,643 @@
         });
       }
 
+      function compressReceiptImage(file, maxDim = 1280, quality = 0.82) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = () => reject(new Error('Could not read image'));
+          reader.onload = () => {
+            const img = new Image();
+            img.onerror = () => reject(new Error('Invalid image file'));
+            img.onload = () => {
+              let w = img.width;
+              let h = img.height;
+              if (w > maxDim || h > maxDim) {
+                if (w >= h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                else { w = Math.round((w * maxDim) / h); h = maxDim; }
+              }
+              const canvas = document.createElement('canvas');
+              canvas.width = w;
+              canvas.height = h;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, w, h);
+              const dataUrl = canvas.toDataURL('image/jpeg', quality);
+              // Also build a tiny thumbnail for optional local attachment
+              const tw = Math.min(360, w);
+              const th = Math.round((h * tw) / w);
+              const tCanvas = document.createElement('canvas');
+              tCanvas.width = tw;
+              tCanvas.height = th;
+              tCanvas.getContext('2d').drawImage(img, 0, 0, tw, th);
+              const thumbUrl = tCanvas.toDataURL('image/jpeg', 0.65);
+              resolve({ dataUrl, base64: dataUrl.split(',')[1], mimeType: 'image/jpeg', thumbUrl });
+            };
+            img.src = String(reader.result);
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      /* =========================================================
+         BANK STATEMENT IMPORTER (CSV + PDF WITH BATCH REVIEW)
+         ========================================================= */
+      function parseDateFlexible(raw) {
+        if (!raw) return '';
+        const t = String(raw).trim();
+        const months = { jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06', jul:'07', aug:'08', sep:'09', oct:'10', nov:'11', dec:'12' };
+        let m = t.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+        if (m) return `${m[1]}-${pad2(m[2])}-${pad2(m[3])}`;
+        m = t.match(/^(\d{1,2})[-\s/](jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[-\s/,]*(\d{2,4})/i);
+        if (m) {
+          const yr = m[3].length === 2 ? `20${m[3]}` : m[3];
+          return `${yr}-${months[m[2].toLowerCase().slice(0, 3)]}-${pad2(m[1])}`;
+        }
+        m = t.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/);
+        if (m) {
+          const yr = m[3].length === 2 ? `20${m[3]}` : m[3];
+          return `${yr}-${pad2(m[2])}-${pad2(m[1])}`;
+        }
+        return '';
+      }
+
+      function parseAmountClean(raw) {
+        if (raw === null || raw === undefined) return 0;
+        const cleaned = String(raw).replace(/[₹$,\s]/g, '').replace(/(cr|dr)$/i, '');
+        const val = parseFloat(cleaned);
+        return isNaN(val) ? 0 : Math.abs(val);
+      }
+
+      function cleanMerchantFromNarration(narr) {
+        let s = String(narr || '').trim();
+        // Common Indian bank UPI/NEFT/IMPS narration cleanup
+        const upiParts = s.split('/').map(x => x.trim()).filter(Boolean);
+        if (/^upi/i.test(s) && upiParts.length >= 2) {
+          // Pick the human-readable merchant segment (skip pure numeric ref or 'UPI')
+          const candidate = upiParts.find(p => !/^(upi|dr|cr|p2m|p2a|pay|in|\d{6,})$/i.test(p) && p.length >= 3);
+          if (candidate) s = candidate;
+        } else if (/^(neft|imps|rtgs)/i.test(s) && upiParts.length >= 2) {
+          const candidate = upiParts.find(p => !/^(neft|imps|rtgs|in|cr|dr|\d{6,})$/i.test(p) && p.length >= 3);
+          if (candidate) s = candidate;
+        }
+        s = s.replace(/\s+/g, ' ').trim();
+        if (s.length > 42) s = s.slice(0, 42).trim();
+        return s || 'Bank Transaction';
+      }
+
+      function classifyStatementRow(narration, isCredit) {
+        const fakeSms = `${isCredit ? 'credited' : 'debited'} ${narration}`;
+        const parsed = parseBankSMS(fakeSms);
+        let type = isCredit ? 'income' : 'expense';
+        if (/\b(refund|cashback|reversal|reversed)\b/i.test(narration)) type = 'refund';
+        else if (/\b(self\s*transfer|own\s*account|internal\s*transfer|to\s*self)\b/i.test(narration)) type = 'transfer';
+        else if (/\b(atm\s*w|cash\s*withdrawal|atm\s*cash)\b/i.test(narration)) type = 'cash_withdrawal';
+        else if (/\b(credit\s*card\s*bill|cred\s*club|cc\s*bill)\b/i.test(narration)) type = 'cc_payment';
+        else if (/\b(sms\s*charge|bank\s*charge|annual\s*fee|gst\s*on|service\s*charge)\b/i.test(narration)) type = 'bank_charges';
+
+        let paymentMethod = parsed.paymentMethod || 'Net Banking';
+        if (/\bupi\b|@/i.test(narration)) paymentMethod = 'UPI';
+        else if (/\bimps\b/i.test(narration)) paymentMethod = 'IMPS';
+        else if (/\bneft\b/i.test(narration)) paymentMethod = 'NEFT';
+        else if (/\bpos\b|debit\s*card|visa|mastercard|rupay/i.test(narration)) paymentMethod = 'Debit Card';
+        else if (/\batm\b/i.test(narration)) paymentMethod = 'Cash';
+        else if (/\bach\b|nach|ecs|sip|mandate/i.test(narration)) paymentMethod = 'Auto-Debit';
+
+        const category = type === 'income' && parsed.category === 'misc' ? 'other_income' : parsed.category;
+        return { type, paymentMethod, category, subcategory: parsed.subcategory || '' };
+      }
+
+      function parseCSVText(text, defaultAccount) {
+        // RFC-4180 CSV row parser
+        const rows = [];
+        let cur = [];
+        let field = '';
+        let inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          if (inQuotes) {
+            if (ch === '"' && text[i + 1] === '"') { field += '"'; i++; }
+            else if (ch === '"') inQuotes = false;
+            else field += ch;
+          } else {
+            if (ch === '"') inQuotes = true;
+            else if (ch === ',') { cur.push(field.trim()); field = ''; }
+            else if (ch === '\n' || ch === '\r') {
+              if (ch === '\r' && text[i + 1] === '\n') i++;
+              cur.push(field.trim());
+              if (cur.some(c => c !== '')) rows.push(cur);
+              cur = []; field = '';
+            } else field += ch;
+          }
+        }
+        if (field || cur.length) { cur.push(field.trim()); if (cur.some(c => c !== '')) rows.push(cur); }
+
+        // Locate header row (Indian bank CSVs often have 3-15 metadata rows at top)
+        let headerIdx = -1;
+        let cols = { date: -1, desc: -1, debit: -1, credit: -1, amount: -1, drCr: -1, ref: -1 };
+        for (let r = 0; r < Math.min(rows.length, 30); r++) {
+          const lower = rows[r].map(c => c.toLowerCase());
+          const dIdx = lower.findIndex(c => /date/.test(c) && !/value/.test(c));
+          const descIdx = lower.findIndex(c => /narration|description|particular|remark|detail|merchant/.test(c));
+          if (dIdx !== -1 && descIdx !== -1) {
+            headerIdx = r;
+            cols.date = dIdx;
+            cols.desc = descIdx;
+            cols.debit = lower.findIndex(c => /debit|withdrawal|dr\s*amt/.test(c));
+            cols.credit = lower.findIndex(c => /credit|deposit|cr\s*amt/.test(c));
+            cols.amount = lower.findIndex(c => /^amount|txn\s*amount|transaction\s*amount/.test(c));
+            cols.drCr = lower.findIndex(c => /dr\s*\/?\s*cr|^type$|cr\/dr/.test(c));
+            cols.ref = lower.findIndex(c => /ref|utr|chq|cheque/.test(c));
+            break;
+          }
+        }
+        if (headerIdx === -1) return [];
+
+        const results = [];
+        for (let r = headerIdx + 1; r < rows.length; r++) {
+          const row = rows[r];
+          const iso = parseDateFlexible(row[cols.date]);
+          if (!iso) continue;
+          const narration = row[cols.desc] || '';
+          let debit = cols.debit !== -1 ? parseAmountClean(row[cols.debit]) : 0;
+          let credit = cols.credit !== -1 ? parseAmountClean(row[cols.credit]) : 0;
+          let amount = 0;
+          let isCredit = false;
+
+          if (debit > 0 || credit > 0) {
+            if (credit > 0 && debit === 0) { amount = credit; isCredit = true; }
+            else { amount = debit; isCredit = false; }
+          } else if (cols.amount !== -1) {
+            const rawAmt = row[cols.amount] || '';
+            amount = parseAmountClean(rawAmt);
+            const flag = cols.drCr !== -1 ? String(row[cols.drCr] || '').toLowerCase() : '';
+            isCredit = /cr|credit|income/.test(flag) || /cr$/i.test(rawAmt.trim()) || /^\+/.test(rawAmt.trim());
+          }
+          if (amount <= 0) continue;
+
+          const ref = cols.ref !== -1 ? (row[cols.ref] || '').trim() : '';
+          const cls = classifyStatementRow(narration, isCredit);
+          const merchant = cleanMerchantFromNarration(narration);
+          const candidate = {
+            amount, merchant, date: iso, time: '', type: cls.type,
+            paymentMethod: cls.paymentMethod, account: defaultAccount,
+            referenceId: ref, category: cls.category, subcategory: cls.subcategory,
+            notes: narration.slice(0, 120), scope: 'personal'
+          };
+          candidate.isDuplicate = !!detectDuplicate(candidate);
+          candidate.selected = !candidate.isDuplicate;
+          results.push(candidate);
+        }
+        return results;
+      }
+
+      async function parsePDFStatement(file, defaultAccount, password = '') {
+        if (typeof pdfjsLib === 'undefined') {
+          throw new Error('PDF reader library is still loading. Check your connection and try again.');
+        }
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const arrayBuffer = await file.arrayBuffer();
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer, password: password || undefined });
+        const pdf = await loadingTask.promise;
+
+        const allLines = [];
+        for (let pNum = 1; pNum <= pdf.numPages; pNum++) {
+          const page = await pdf.getPage(pNum);
+          const tc = await page.getTextContent();
+          // Group text items by rounded Y coordinate to reconstruct visual table rows
+          const rowMap = new Map();
+          for (const item of tc.items) {
+            const str = (item.str || '').trim();
+            if (!str) continue;
+            const y = Math.round(item.transform[5] / 3) * 3;
+            const x = item.transform[4];
+            if (!rowMap.has(y)) rowMap.set(y, []);
+            rowMap.get(y).push({ x, str });
+          }
+          const sortedYs = Array.from(rowMap.keys()).sort((a, b) => b - a);
+          for (const y of sortedYs) {
+            const line = rowMap.get(y).sort((a, b) => a.x - b.x).map(i => i.str).join(' ');
+            allLines.push(line);
+          }
+        }
+
+        // Parse Indian bank statement rows starting with a date
+        const results = [];
+        const dateStartRe = /^(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}[-\s/](?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[-\s/,]*\d{2,4}|\d{4}[-/]\d{2}[-/]\d{2})\b\s*(.*)/i;
+        const numRe = /(?:₹|rs\.?|inr)?\s*([0-9]{1,3}(?:,[0-9]{2,3})*\.[0-9]{2}|[0-9]+\.[0-9]{2})\s*(cr|dr)?/gi;
+
+        for (const line of allLines) {
+          const dm = line.match(dateStartRe);
+          if (!dm) continue;
+          const iso = parseDateFlexible(dm[1]);
+          if (!iso) continue;
+          const rest = dm[2] || '';
+          const nums = [];
+          let nm;
+          numRe.lastIndex = 0;
+          while ((nm = numRe.exec(rest)) !== null) {
+            const val = parseFloat(nm[1].replace(/,/g, ''));
+            if (!isNaN(val) && val > 0) nums.push({ val, flag: (nm[2] || '').toLowerCase(), idx: nm.index });
+          }
+          if (nums.length === 0) continue;
+
+          // In Indian bank statements, the last number is usually Running Balance, and the one before it is Txn Amount
+          const txnObj = nums.length >= 2 ? nums[nums.length - 2] : nums[0];
+          const amount = txnObj.val;
+          if (amount <= 0) continue;
+
+          const firstNumIdx = nums[0].idx;
+          const narration = rest.slice(0, firstNumIdx).replace(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/g, '').trim();
+          if (narration.length < 2 || /opening\s*balance|closing\s*balance|statement\s*summary/i.test(narration)) continue;
+
+          const isCredit = txnObj.flag === 'cr' || /\b(cr|credit|salary|refund|interest\s*paid|deposit|received)\b/i.test(narration);
+          const refMatch = narration.match(/\b([A-Z0-9]{10,20})\b/);
+          const cls = classifyStatementRow(narration, isCredit);
+          const merchant = cleanMerchantFromNarration(narration);
+
+          const candidate = {
+            amount, merchant, date: iso, time: '', type: cls.type,
+            paymentMethod: cls.paymentMethod, account: defaultAccount,
+            referenceId: refMatch ? refMatch[1] : '',
+            category: cls.category, subcategory: cls.subcategory,
+            notes: narration.slice(0, 120), scope: 'personal'
+          };
+          candidate.isDuplicate = !!detectDuplicate(candidate);
+          candidate.selected = !candidate.isDuplicate;
+          results.push(candidate);
+        }
+        return results;
+      }
+
+      function openStatementImportModal() {
+        haptic(12);
+        let parsedRows = [];
+        let selectedFile = null;
+
+        function renderImportShell() {
+          const dupCount = parsedRows.filter(r => r.isDuplicate).length;
+          const selCount = parsedRows.filter(r => r.selected).length;
+
+          openModal(`
+            <div class="glass-modal sheet-animate w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 max-h-[92dvh] overflow-y-auto space-y-4">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 primary-glow-btn flex items-center justify-center">
+                    <i data-lucide="file-up" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-semibold text-base">Import Bank Statement (PDF / CSV)</h3>
+                    <p class="text-[11px]" style="color: var(--text-secondary);">Parsed privately in your browser • Review every row before saving</p>
+                  </div>
+                </div>
+                <button id="stmt-close-btn" type="button" class="p-2 hover:bg-black/10"><i data-lucide="x" class="w-5 h-5"></i></button>
+              </div>
+
+              ${parsedRows.length === 0 ? `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-[11px] block mb-1" style="color: var(--text-secondary);">Assign to Account</label>
+                    <select id="stmt-account" class="glass-input w-full px-3 py-2 text-xs">
+                      ${state.accounts.map(a => `<option value="${escapeHtml(a.name)}">${escapeHtml(a.name)}</option>`).join('')}
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-[11px] block mb-1" style="color: var(--text-secondary);">PDF Password (only if locked)</label>
+                    <input id="stmt-pdf-pass" type="password" placeholder="Leave blank if unlocked" class="glass-input w-full px-3 py-2 text-xs" />
+                  </div>
+                </div>
+
+                <input id="stmt-file-input" type="file" accept=".csv,.pdf,text/csv,application/pdf" class="hidden" />
+                <div id="stmt-dropzone" class="glass-input p-6 text-center cursor-pointer space-y-2">
+                  <i data-lucide="file-spreadsheet" class="w-9 h-9 mx-auto opacity-75"></i>
+                  <p class="font-pixel font-bold text-xs sm:text-sm uppercase">${selectedFile ? escapeHtml(selectedFile.name) : 'Tap or Drop Bank Statement (.PDF or .CSV)'}</p>
+                  <p class="text-[11px]" style="color: var(--text-secondary);">Supports Kotak, HDFC, ICICI, SBI, Axis & standard CSV/PDF bank statements.</p>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t" style="border-color: var(--border-ink);">
+                  <button id="stmt-cancel" type="button" class="glass-card btn-press px-4 py-2 text-xs">Cancel</button>
+                  <button id="stmt-parse-btn" type="button" ${selectedFile ? '' : 'disabled'} class="primary-glow-btn btn-press px-5 py-2 text-xs ${selectedFile ? '' : 'opacity-50 cursor-not-allowed'}">Extract Transactions ▸</button>
+                </div>
+              ` : `
+                <div class="flex flex-wrap items-center justify-between gap-2 p-2.5 border-2 border-ink text-xs" style="background: var(--input-bg);">
+                  <span>Found <strong>${parsedRows.length}</strong> transactions (${selCount} selected${dupCount ? `, <span class="text-amber-600 font-semibold">${dupCount} duplicates skipped</span>` : ''})</span>
+                  <div class="flex items-center gap-2">
+                    <button id="stmt-sel-all" type="button" class="text-[11px] font-pixel font-bold uppercase text-periwinkle hover:underline">Select All</button>
+                    <button id="stmt-sel-none" type="button" class="text-[11px] font-pixel font-bold uppercase text-coralNeg hover:underline">None</button>
+                    <button id="stmt-reupload" type="button" class="text-[11px] font-pixel font-bold uppercase hover:underline">Change File</button>
+                  </div>
+                </div>
+
+                <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  ${parsedRows.map((row, idx) => `
+                    <div class="p-2.5 border-2 border-ink flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 text-xs" style="background: ${row.selected ? 'var(--surface-card)' : 'var(--input-bg)'}; opacity: ${row.selected ? '1' : '0.6'};">
+                      <div class="flex items-center gap-2 min-w-0 flex-1">
+                        <input type="checkbox" data-stmt-chk="${idx}" ${row.selected ? 'checked' : ''} class="stmt-row-chk w-4 h-4 accent-mint shrink-0" />
+                        <div class="min-w-0 flex-1">
+                          <div class="flex items-center gap-1.5">
+                            <input type="text" data-stmt-merch="${idx}" value="${escapeHtml(row.merchant)}" class="stmt-row-merch glass-input px-1.5 py-0.5 text-xs font-semibold w-full max-w-[180px]" />
+                            ${row.isDuplicate ? '<span class="text-[9px] font-pixel font-bold px-1.5 py-0.5 bg-amberGold text-ink border border-ink shrink-0">DUP</span>' : ''}
+                          </div>
+                          <p class="text-[10px] mt-0.5 tabular-nums" style="color: var(--text-secondary);">${formatDate(row.date)} • ${escapeHtml(row.paymentMethod)}</p>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-1.5 shrink-0">
+                        <select data-stmt-cat="${idx}" class="stmt-row-cat glass-input px-1.5 py-1 text-[11px] max-w-[115px]">
+                          ${state.categories.map(c => `<option value="${c.id}" ${row.category === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+                        </select>
+                        <select data-stmt-type="${idx}" class="stmt-row-type glass-input px-1.5 py-1 text-[11px]">
+                          ${['expense', 'income', 'refund', 'transfer'].map(tp => `<option value="${tp}" ${row.type === tp ? 'selected' : ''}>${tp}</option>`).join('')}
+                        </select>
+                        <span class="font-bold tabular-nums w-20 text-right ${row.type === 'income' || row.type === 'refund' ? 'text-emeraldPos' : 'text-coralNeg'}">${formatCurrency(row.amount)}</span>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style="border-color: var(--border-ink);">
+                  <button id="stmt-cancel-review" type="button" class="glass-card btn-press px-4 py-2 text-xs">Cancel</button>
+                  <button id="stmt-confirm-import" type="button" ${selCount === 0 ? 'disabled' : ''} class="primary-glow-btn btn-press px-5 py-2.5 text-xs sm:text-sm ${selCount === 0 ? 'opacity-50 cursor-not-allowed' : ''}">
+                    Confirm & Import (${selCount}) ▸
+                  </button>
+                </div>
+              `}
+            </div>
+          `);
+
+          document.getElementById('stmt-close-btn')?.addEventListener('click', closeModal);
+          document.getElementById('stmt-cancel')?.addEventListener('click', closeModal);
+          document.getElementById('stmt-cancel-review')?.addEventListener('click', closeModal);
+
+          if (parsedRows.length === 0) {
+            const inp = document.getElementById('stmt-file-input');
+            const dz = document.getElementById('stmt-dropzone');
+            dz?.addEventListener('click', () => inp?.click());
+            inp?.addEventListener('change', (e) => { if (e.target.files?.[0]) { selectedFile = e.target.files[0]; renderImportShell(); } });
+            dz?.addEventListener('dragover', (e) => { e.preventDefault(); dz.style.borderColor = '#F4B841'; });
+            dz?.addEventListener('dragleave', () => { dz.style.borderColor = ''; });
+            dz?.addEventListener('drop', (e) => { e.preventDefault(); dz.style.borderColor = ''; if (e.dataTransfer?.files?.[0]) { selectedFile = e.dataTransfer.files[0]; renderImportShell(); } });
+
+            document.getElementById('stmt-parse-btn')?.addEventListener('click', async () => {
+              if (!selectedFile) return;
+              const account = document.getElementById('stmt-account')?.value || state.accounts[0]?.name || 'Kotak 811';
+              const pdfPass = document.getElementById('stmt-pdf-pass')?.value || '';
+              const btn = document.getElementById('stmt-parse-btn');
+              if (btn) { btn.disabled = true; btn.textContent = 'Parsing...'; }
+              try {
+                const name = selectedFile.name.toLowerCase();
+                if (name.endsWith('.csv') || selectedFile.type.includes('csv')) {
+                  const text = await selectedFile.text();
+                  parsedRows = parseCSVText(text, account);
+                } else if (name.endsWith('.pdf') || selectedFile.type.includes('pdf')) {
+                  parsedRows = await parsePDFStatement(selectedFile, account, pdfPass);
+                } else {
+                  showToast('Please upload a .CSV or .PDF bank statement.', 'warning');
+                  renderImportShell();
+                  return;
+                }
+                if (parsedRows.length === 0) {
+                  showToast('No transactions detected. If this PDF is scanned/image-only, use Scan Bill/Screenshot or export CSV from your bank.', 'warning');
+                  renderImportShell();
+                  return;
+                }
+                showToast(`Extracted ${parsedRows.length} transactions — review & confirm below.`, 'success');
+                renderImportShell();
+              } catch (err) {
+                const msg = /password/i.test(String(err?.message || err?.name || ''))
+                  ? 'This PDF is password-protected. Enter the PDF password above and try again.'
+                  : ('Could not parse file: ' + (err?.message || 'unsupported format'));
+                showToast(msg, 'error');
+                renderImportShell();
+              }
+            });
+          } else {
+            document.getElementById('stmt-sel-all')?.addEventListener('click', () => { parsedRows.forEach(r => r.selected = true); renderImportShell(); });
+            document.getElementById('stmt-sel-none')?.addEventListener('click', () => { parsedRows.forEach(r => r.selected = false); renderImportShell(); });
+            document.getElementById('stmt-reupload')?.addEventListener('click', () => { parsedRows = []; selectedFile = null; renderImportShell(); });
+
+            document.querySelectorAll('.stmt-row-chk').forEach(chk => {
+              chk.addEventListener('change', () => { parsedRows[Number(chk.dataset.stmtChk)].selected = chk.checked; renderImportShell(); });
+            });
+            document.querySelectorAll('.stmt-row-merch').forEach(inp => {
+              inp.addEventListener('change', () => { parsedRows[Number(inp.dataset.stmtMerch)].merchant = inp.value.trim() || 'Transaction'; });
+            });
+            document.querySelectorAll('.stmt-row-cat').forEach(sel => {
+              sel.addEventListener('change', () => { parsedRows[Number(sel.dataset.stmtCat)].category = sel.value; });
+            });
+            document.querySelectorAll('.stmt-row-type').forEach(sel => {
+              sel.addEventListener('change', () => { parsedRows[Number(sel.dataset.stmtType)].type = sel.value; renderImportShell(); });
+            });
+
+            document.getElementById('stmt-confirm-import')?.addEventListener('click', () => {
+              const chosen = parsedRows.filter(r => r.selected);
+              if (!chosen.length) return;
+              const now = Date.now();
+              chosen.forEach((r, i) => {
+                state.transactions.unshift({
+                  id: `tx_stmt_${now}_${i}`,
+                  amount: Number(r.amount),
+                  merchant: r.merchant,
+                  date: r.date,
+                  time: r.time || '',
+                  type: r.type,
+                  paymentMethod: r.paymentMethod,
+                  account: r.account,
+                  referenceId: r.referenceId || '',
+                  category: r.category,
+                  subcategory: r.subcategory || '',
+                  notes: r.notes || '',
+                  scope: 'personal',
+                  isDemo: false
+                });
+              });
+              state.hasDemoData = state.transactions.some(t => t.isDemo);
+              saveState();
+              haptic(20);
+              showSuccessOverlay('Statement Imported!', `${chosen.length} transactions added`);
+            });
+          }
+        }
+
+        renderImportShell();
+      }
+
+      function openReceiptScannerModal() {
+        haptic(12);
+        let selectedImg = null;
+
+        openModal(`
+          <div class="glass-modal sheet-animate w-full sm:max-w-xl rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-h-[92dvh] overflow-y-auto space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 primary-glow-btn flex items-center justify-center">
+                  <i data-lucide="camera" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-base">Scan Bill or Screenshot</h3>
+                  <p class="text-[11px]" style="color: var(--text-secondary);">Paper receipts, GPay, PhonePe, Paytm & bank screenshots</p>
+                </div>
+              </div>
+              <button id="rcp-close-btn" type="button" class="p-2 hover:bg-black/10"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <button id="btn-rcp-camera" type="button" class="primary-glow-btn btn-press py-2.5 px-3 text-xs flex items-center justify-center gap-1.5">
+                <i data-lucide="camera" class="w-4 h-4"></i> Take Bill Photo
+              </button>
+              <button id="btn-rcp-upload" type="button" class="glass-card btn-press py-2.5 px-3 text-xs font-pixel font-bold uppercase flex items-center justify-center gap-1.5">
+                <i data-lucide="image-plus" class="w-4 h-4"></i> Upload Screenshot
+              </button>
+            </div>
+
+            <input id="rcp-camera-input" type="file" accept="image/*" capture="environment" class="hidden" />
+            <input id="rcp-file-input" type="file" accept="image/*" class="hidden" />
+
+            <div id="rcp-dropzone" class="sms-scan-wrap glass-input p-4 text-center cursor-pointer transition-colors">
+              <div class="sms-scan-beam"></div>
+              <div id="rcp-empty-prompt" class="py-6 space-y-2">
+                <i data-lucide="scan-line" class="w-8 h-8 mx-auto opacity-70"></i>
+                <p class="text-xs font-semibold">Drop a bill photo / screenshot here, or press Ctrl+V to paste</p>
+                <p class="text-[11px]" style="color: var(--text-secondary);">Images are compressed on-device and never saved without your confirmation.</p>
+              </div>
+              <div id="rcp-preview-wrap" class="hidden space-y-2">
+                <img id="rcp-preview-img" alt="Bill or transaction screenshot preview" class="max-h-60 mx-auto border-2 border-ink object-contain" />
+                <p id="rcp-file-label" class="text-[11px]" style="color: var(--text-secondary);"></p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style="border-color: var(--border-ink);">
+              <button id="btn-rcp-to-sms" type="button" class="glass-card btn-press px-3 py-2 text-xs">Switch to SMS Text</button>
+              <div class="flex items-center gap-2">
+                <button id="btn-rcp-clear" type="button" class="glass-card btn-press px-3 py-2 text-xs">Clear</button>
+                <button id="btn-rcp-analyse" type="button" disabled class="primary-glow-btn btn-press px-5 py-2.5 text-xs sm:text-sm flex items-center gap-1.5 opacity-50 cursor-not-allowed">
+                  <i data-lucide="sparkles" class="w-4 h-4"></i> Analyse Bill ▸
+                </button>
+              </div>
+            </div>
+          </div>
+        `);
+
+        const handleFile = async (file) => {
+          if (!file || !file.type.startsWith('image/')) {
+            showToast('Please select a valid image file.', 'warning');
+            return;
+          }
+          try {
+            selectedImg = await compressReceiptImage(file);
+            const prevImg = document.getElementById('rcp-preview-img');
+            if (prevImg) prevImg.src = selectedImg.dataUrl;
+            document.getElementById('rcp-empty-prompt')?.classList.add('hidden');
+            document.getElementById('rcp-preview-wrap')?.classList.remove('hidden');
+            const lbl = document.getElementById('rcp-file-label');
+            if (lbl) lbl.textContent = `${file.name || 'Pasted screenshot'} • Ready to analyse`;
+            const btn = document.getElementById('btn-rcp-analyse');
+            if (btn) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+          } catch (err) {
+            showToast('Could not load image.', 'error');
+          }
+        };
+
+        const onPaste = (e) => {
+          const items = e.clipboardData?.items || [];
+          for (const item of items) {
+            if (item.type.startsWith('image/')) {
+              const f = item.getAsFile();
+              if (f) handleFile(f);
+              break;
+            }
+          }
+        };
+        window.addEventListener('paste', onPaste);
+        const cleanupAndClose = () => { window.removeEventListener('paste', onPaste); closeModal(); };
+
+        document.getElementById('rcp-close-btn')?.addEventListener('click', cleanupAndClose);
+        document.getElementById('btn-rcp-to-sms')?.addEventListener('click', () => { window.removeEventListener('paste', onPaste); openSMSParserModal(); });
+        document.getElementById('btn-rcp-camera')?.addEventListener('click', () => document.getElementById('rcp-camera-input')?.click());
+        document.getElementById('btn-rcp-upload')?.addEventListener('click', () => document.getElementById('rcp-file-input')?.click());
+        document.getElementById('rcp-dropzone')?.addEventListener('click', () => document.getElementById('rcp-file-input')?.click());
+        document.getElementById('rcp-camera-input')?.addEventListener('change', (e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); });
+        document.getElementById('rcp-file-input')?.addEventListener('change', (e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); });
+
+        const dz = document.getElementById('rcp-dropzone');
+        dz?.addEventListener('dragover', (e) => { e.preventDefault(); dz.style.borderColor = '#F4B841'; });
+        dz?.addEventListener('dragleave', () => { dz.style.borderColor = ''; });
+        dz?.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dz.style.borderColor = '';
+          if (e.dataTransfer?.files?.[0]) handleFile(e.dataTransfer.files[0]);
+        });
+
+        document.getElementById('btn-rcp-clear')?.addEventListener('click', () => {
+          selectedImg = null;
+          document.getElementById('rcp-empty-prompt')?.classList.remove('hidden');
+          document.getElementById('rcp-preview-wrap')?.classList.add('hidden');
+          const btn = document.getElementById('btn-rcp-analyse');
+          if (btn) { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
+        });
+
+        document.getElementById('btn-rcp-analyse')?.addEventListener('click', async () => {
+          if (!selectedImg) return;
+          const wrap = document.getElementById('rcp-dropzone');
+          const btn = document.getElementById('btn-rcp-analyse');
+          if (wrap) wrap.classList.add('scanning');
+          if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="scan-line" class="w-4 h-4 animate-pulse"></i> Scanning Bill...'; lucide.createIcons({ nodes: [btn] }); }
+
+          let draft = {
+            amount: '', merchant: '', date: isoDaysAgo(0), time: '', type: 'expense',
+            paymentMethod: 'UPI', account: state.accounts[0]?.name || 'Kotak 811',
+            referenceId: '', category: 'food', subcategory: '', notes: '', scope: 'personal',
+            receiptImage: selectedImg.thumbUrl,
+            confidence: { amount: 'missing', merchant: 'missing' }
+          };
+
+          // On Vercel deployment, invoke /api/parse-receipt (Gemini Vision) when available
+          if (window.__AURELIA_RECEIPT_API_ENABLED__ && location.protocol.startsWith('http')) {
+            try {
+              const res = await fetch('/api/parse-receipt', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageBase64: selectedImg.base64, mimeType: selectedImg.mimeType })
+              });
+              if (res.ok) {
+                const data = await res.json();
+                if (data && data.parsed) {
+                  const p = data.parsed;
+                  draft = {
+                    ...draft,
+                    amount: p.amount || '',
+                    merchant: p.merchant || '',
+                    date: p.date || isoDaysAgo(0),
+                    time: p.time || '',
+                    type: p.type || 'expense',
+                    paymentMethod: p.paymentMethod || 'UPI',
+                    account: p.account || draft.account,
+                    referenceId: p.referenceId || '',
+                    category: p.category || 'misc',
+                    subcategory: p.subcategory || '',
+                    notes: p.notes || '',
+                    confidence: {
+                      amount: p.amount ? 'high' : 'missing',
+                      merchant: p.merchant ? 'high' : 'missing',
+                      date: p.date ? 'high' : 'low',
+                      category: p.category ? 'high' : 'low'
+                    }
+                  };
+                  showToast('Bill details extracted with AI Vision!', 'success');
+                } else if (data?.note) {
+                  showToast('AI Vision key not set — review bill preview and fill fields below.', 'info');
+                }
+              }
+            } catch (err) {
+              showToast('Review your bill preview below to confirm details.', 'info');
+            }
+          } else {
+            await new Promise(r => setTimeout(r, 420));
+            showToast('Bill attached! Add GEMINI_API_KEY on Vercel for auto-OCR, or fill details below.', 'info');
+          }
+
+          window.removeEventListener('paste', onPaste);
+          openConfirmationModal(draft);
+        });
+      }
+
       function openConfirmationModal(draft, existingId = null, recurringIdToAdvance = null) {
         haptic(10);
         const dup = detectDuplicate(draft, existingId);
@@ -3062,6 +4365,16 @@
               </div>
               <button id="conf-close" type="button" class="p-2 rounded-xl hover:bg-white/10"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
+
+            ${draft.receiptImage ? `
+              <div class="p-2 border-2 border-ink flex items-center gap-3" style="background: var(--input-bg);">
+                <img src="${draft.receiptImage}" alt="Attached bill or screenshot" class="w-16 h-16 object-cover border-2 border-ink shrink-0 cursor-pointer" id="cf-receipt-thumb" title="Tap to enlarge" />
+                <div class="text-xs min-w-0">
+                  <p class="font-pixel font-bold uppercase text-[11px]">Bill / Screenshot Attached</p>
+                  <p class="text-[11px]" style="color: var(--text-secondary);">Compare the image while confirming fields below. Tap thumbnail to zoom.</p>
+                </div>
+              </div>
+            ` : ''}
 
             ${draft.statusWarning ? `
               <div class="rounded-2xl p-3 bg-coralNeg/15 border border-coralNeg/35 text-xs text-coralNeg flex items-start gap-2">
@@ -3198,6 +4511,15 @@
         `);
 
         document.getElementById('conf-close')?.addEventListener('click', closeModal);
+        document.getElementById('cf-receipt-thumb')?.addEventListener('click', () => {
+          const el = document.getElementById('cf-receipt-thumb');
+          if (!el) return;
+          el.classList.toggle('w-16');
+          el.classList.toggle('h-16');
+          el.classList.toggle('w-full');
+          el.classList.toggle('max-h-72');
+          el.classList.toggle('object-contain');
+        });
         document.getElementById('btn-cancel-tx')?.addEventListener('click', closeModal);
         document.getElementById('btn-edit-sms')?.addEventListener('click', () => openSMSParserModal(draft.rawSMS));
 
@@ -3252,7 +4574,7 @@
               );
             } else {
               state.transactions.unshift({
-                id: 'tx_' + Date.now(), amount, merchant, date, time, type, category, subcategory, paymentMethod, account, referenceId, scope, notes, isDemo: false
+                id: 'tx_' + Date.now(), amount, merchant, date, time, type, category, subcategory, paymentMethod, account, referenceId, scope, notes, receiptImage: draft.receiptImage || '', isDemo: false
               });
             }
 
@@ -3352,28 +4674,240 @@
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       }
 
+      function buildAnalysisDataset(txList, rangeLabel = '') {
+        const s = computeSummary(txList);
+        const budget = Number(state.budgets.overall) || 0;
+        const budgetPct = budget > 0 ? Math.round((s.netSpending / budget) * 100) : 0;
+        const catSubRows = [];
+        Object.entries(s.byCategoryMeta).sort((a, b) => b[1].total - a[1].total).forEach(([catId, meta]) => {
+          const cat = getCategoryById(catId);
+          const catShare = s.totalSpend > 0 ? ((meta.total / s.totalSpend) * 100).toFixed(1) + '%' : '0%';
+          Object.entries(meta.subcats).sort((a, b) => b[1].total - a[1].total).forEach(([subName, sm]) => {
+            const subShare = s.totalSpend > 0 ? ((sm.total / s.totalSpend) * 100).toFixed(1) + '%' : '0%';
+            catSubRows.push({
+              category: cat.name,
+              subcategory: subName,
+              count: sm.count,
+              amount: sm.total,
+              share: subShare,
+              catTotal: meta.total,
+              catShare
+            });
+          });
+        });
+        const pmRows = Object.entries(s.byPaymentMethod).sort((a, b) => b[1] - a[1]).map(([pm, val]) => ({
+          method: pm, amount: val, share: s.totalSpend > 0 ? ((val / s.totalSpend) * 100).toFixed(1) + '%' : '0%'
+        }));
+        const topMerchRows = Object.entries(s.byMerchant).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([m, val]) => ({
+          merchant: m, amount: val, share: s.totalSpend > 0 ? ((val / s.totalSpend) * 100).toFixed(1) + '%' : '0%'
+        }));
+        return { s, budget, budgetPct, catSubRows, pmRows, topMerchRows, rangeLabel: rangeLabel || analyticsRange.replace(/_/g, ' ').toUpperCase() };
+      }
+
       function exportCSV(txList) {
-        const headers = ['Date', 'Time', 'Merchant', 'Type', 'Category', 'Subcategory', 'Payment Method', 'Account', 'Amount', 'Reference ID', 'Scope', 'Notes'];
-        const rows = txList.map(t => [
+        const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+        const { s, budget, budgetPct, catSubRows, pmRows, topMerchRows, rangeLabel } = buildAnalysisDataset(txList);
+        const lines = [];
+        lines.push([esc('AURELIA FINANCIAL ANALYSIS REPORT — ANAS'), esc('Period: ' + rangeLabel), esc('Generated: ' + isoDaysAgo(0))].join(','));
+        lines.push('');
+        lines.push(esc('=== EXECUTIVE SUMMARY ==='));
+        lines.push(['Metric', 'Value'].map(esc).join(','));
+        [
+          ['Gross Spending', s.totalSpend.toFixed(2)],
+          ['Total Refunds', s.totalRefunds.toFixed(2)],
+          ['Net Spending', s.netSpending.toFixed(2)],
+          ['Total Income', s.totalIncome.toFixed(2)],
+          ['Net Savings', s.monthlySavings.toFixed(2)],
+          ['Savings Rate', s.savingsRate + '%'],
+          ['Monthly Budget', budget.toFixed(2)],
+          ['Budget Utilisation', budgetPct + '%'],
+          ['Average Expense Transaction', s.avgTx.toFixed(2)],
+          ['Personal Spend', s.byScope.personal.toFixed(2)],
+          ['Business Spend', s.byScope.business.toFixed(2)],
+          ['Internal Transfers Excluded', s.totalTransfers.toFixed(2)]
+        ].forEach(r => lines.push(r.map(esc).join(',')));
+
+        lines.push('');
+        lines.push(esc('=== CATEGORY & SUBCATEGORY ANALYSIS ==='));
+        lines.push(['Category', 'Subcategory', 'Tx Count', 'Amount', '% of Spend'].map(esc).join(','));
+        catSubRows.forEach(r => lines.push([r.category, r.subcategory, r.count, r.amount.toFixed(2), r.share].map(esc).join(',')));
+
+        lines.push('');
+        lines.push(esc('=== PAYMENT METHOD BREAKDOWN ==='));
+        lines.push(['Payment Method', 'Amount', '% of Spend'].map(esc).join(','));
+        pmRows.forEach(r => lines.push([r.method, r.amount.toFixed(2), r.share].map(esc).join(',')));
+
+        lines.push('');
+        lines.push(esc('=== TOP MERCHANTS ==='));
+        lines.push(['Merchant', 'Total Spent', '% of Spend'].map(esc).join(','));
+        topMerchRows.forEach(r => lines.push([r.merchant, r.amount.toFixed(2), r.share].map(esc).join(',')));
+
+        lines.push('');
+        lines.push(esc('=== ITEMIZED TRANSACTIONS ==='));
+        lines.push(['Date', 'Time', 'Merchant', 'Type', 'Category', 'Subcategory', 'Payment Method', 'Account', 'Amount', 'Reference ID', 'Scope', 'Notes'].map(esc).join(','));
+        txList.forEach(t => lines.push([
           t.date, t.time || '', t.merchant, t.type, getCategoryById(t.category).name,
-          t.subcategory || '', t.paymentMethod || '', t.account || '', t.amount,
+          t.subcategory || 'General', t.paymentMethod || '', t.account || '', Number(t.amount).toFixed(2),
           t.referenceId || '', t.scope || 'personal', t.notes || ''
-        ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
-        downloadBlob([headers.join(','), ...rows].join('\n'), `aurelia-expenses-${isoDaysAgo(0)}.csv`, 'text/csv;charset=utf-8;');
-        showToast('CSV exported successfully', 'success');
+        ].map(esc).join(',')));
+
+        downloadBlob(lines.join('\n'), `aurelia-analysis-${isoDaysAgo(0)}.csv`, 'text/csv;charset=utf-8;');
+        showToast('CSV with full analysis exported!', 'success');
       }
 
       function exportExcelHTML(txList) {
-        const rows = txList.map(t => `
+        const { s, budget, budgetPct, catSubRows, pmRows, topMerchRows, rangeLabel } = buildAnalysisDataset(txList);
+        const catRowsHtml = catSubRows.map(r => `<tr><td>${escapeHtml(r.category)}</td><td>${escapeHtml(r.subcategory)}</td><td>${r.count}</td><td>${r.amount.toFixed(2)}</td><td>${escapeHtml(r.share)}</td></tr>`).join('');
+        const pmRowsHtml = pmRows.map(r => `<tr><td>${escapeHtml(r.method)}</td><td>${r.amount.toFixed(2)}</td><td>${escapeHtml(r.share)}</td></tr>`).join('');
+        const merchRowsHtml = topMerchRows.map(r => `<tr><td>${escapeHtml(r.merchant)}</td><td>${r.amount.toFixed(2)}</td><td>${escapeHtml(r.share)}</td></tr>`).join('');
+        const txRowsHtml = txList.map(t => `
           <tr>
             <td>${escapeHtml(t.date)}</td><td>${escapeHtml(t.merchant)}</td><td>${escapeHtml(t.type)}</td>
-            <td>${escapeHtml(getCategoryById(t.category).name)}</td><td>${escapeHtml(t.paymentMethod)}</td>
-            <td>${escapeHtml(t.account)}</td><td>${Number(t.amount).toFixed(2)}</td><td>${escapeHtml(t.referenceId || '')}</td>
+            <td>${escapeHtml(getCategoryById(t.category).name)}</td><td>${escapeHtml(t.subcategory || 'General')}</td>
+            <td>${escapeHtml(t.paymentMethod)}</td><td>${escapeHtml(t.account)}</td>
+            <td>${Number(t.amount).toFixed(2)}</td><td>${escapeHtml(t.referenceId || '')}</td><td>${escapeHtml(t.notes || '')}</td>
           </tr>
         `).join('');
-        const html = `<html><head><meta charset="utf-8"></head><body><table border="1"><tr><th>Date</th><th>Merchant</th><th>Type</th><th>Category</th><th>Payment Method</th><th>Account</th><th>Amount</th><th>Reference ID</th></tr>${rows}</table></body></html>`;
-        downloadBlob(html, `aurelia-expenses-${isoDaysAgo(0)}.xls`, 'application/vnd.ms-excel');
-        showToast('Excel workbook exported', 'success');
+
+        const html = `<html><head><meta charset="utf-8"><style>table{border-collapse:collapse;margin-bottom:18px;font-family:Arial,sans-serif;font-size:12px;}th{background:#231E3A;color:#FAF3E6;padding:6px 10px;text-align:left;}td{border:1px solid #cbd5e1;padding:5px 8px;}h2,h3{font-family:Arial,sans-serif;color:#14111D;}</style></head><body>
+          <h2>Aurelia Financial Analysis Report — Anas (${escapeHtml(rangeLabel)})</h2>
+          <h3>Executive Summary</h3>
+          <table>
+            <tr><th>Metric</th><th>Value</th><th>Metric</th><th>Value</th></tr>
+            <tr><td>Net Spending</td><td>${s.netSpending.toFixed(2)}</td><td>Total Income</td><td>${s.totalIncome.toFixed(2)}</td></tr>
+            <tr><td>Total Refunds</td><td>${s.totalRefunds.toFixed(2)}</td><td>Net Savings</td><td>${s.monthlySavings.toFixed(2)} (${s.savingsRate}%)</td></tr>
+            <tr><td>Monthly Budget</td><td>${budget.toFixed(2)} (${budgetPct}% used)</td><td>Avg Expense</td><td>${s.avgTx.toFixed(2)}</td></tr>
+            <tr><td>Personal Spend</td><td>${s.byScope.personal.toFixed(2)}</td><td>Business Spend</td><td>${s.byScope.business.toFixed(2)}</td></tr>
+          </table>
+          <h3>Category & Subcategory Analysis</h3>
+          <table><tr><th>Category</th><th>Subcategory</th><th>Tx Count</th><th>Amount</th><th>% of Spend</th></tr>${catRowsHtml}</table>
+          <h3>Payment Method Breakdown</h3>
+          <table><tr><th>Payment Method</th><th>Amount</th><th>% of Spend</th></tr>${pmRowsHtml}</table>
+          <h3>Top Merchants</h3>
+          <table><tr><th>Merchant</th><th>Total Spent</th><th>% of Spend</th></tr>${merchRowsHtml}</table>
+          <h3>Itemized Transactions (${txList.length})</h3>
+          <table><tr><th>Date</th><th>Merchant</th><th>Type</th><th>Category</th><th>Subcategory</th><th>Payment Method</th><th>Account</th><th>Amount</th><th>Reference ID</th><th>Notes</th></tr>${txRowsHtml}</table>
+        </body></html>`;
+        downloadBlob(html, `aurelia-analysis-${isoDaysAgo(0)}.xls`, 'application/vnd.ms-excel');
+        showToast('Excel report with full analysis exported!', 'success');
+      }
+
+      function exportPDFReport(txList) {
+        const { s, budget, budgetPct, catSubRows, pmRows, topMerchRows, rangeLabel } = buildAnalysisDataset(txList);
+        const fmt = n => `${state.settings.currency === 'INR' ? 'Rs. ' : ''}${Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+        try {
+          if (!window.jspdf || !window.jspdf.jsPDF) {
+            throw new Error('PDF library still loading');
+          }
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+          let y = 44;
+
+          // Header banner
+          doc.setFillColor(35, 30, 58);
+          doc.rect(0, 0, 595, 76, 'F');
+          doc.setTextColor(244, 184, 65);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(18);
+          doc.text('AURELIA FINANCIAL ANALYSIS REPORT', 40, 34);
+          doc.setTextColor(250, 243, 230);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          doc.text(`Prepared for Anas  |  Period: ${rangeLabel}  |  Generated: ${formatDate(isoDaysAgo(0))}`, 40, 54);
+          y = 96;
+
+          // 1. Executive Summary Table
+          doc.setTextColor(20, 17, 29);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(12);
+          doc.text('1. Executive Summary', 40, y);
+          doc.autoTable({
+            startY: y + 8,
+            head: [['Metric', 'Amount / Value', 'Metric', 'Amount / Value']],
+            body: [
+              ['Net Spending', fmt(s.netSpending), 'Total Income', fmt(s.totalIncome)],
+              ['Gross Spending', fmt(s.totalSpend), 'Total Refunds', fmt(s.totalRefunds)],
+              ['Net Savings', `${fmt(s.monthlySavings)} (${s.savingsRate}%)`, 'Monthly Budget', `${fmt(budget)} (${budgetPct}% used)`],
+              ['Personal Spend', fmt(s.byScope.personal), 'Business Spend', fmt(s.byScope.business)],
+              ['Avg Expense Tx', fmt(s.avgTx), 'Transfers Excluded', fmt(s.totalTransfers)]
+            ],
+            theme: 'grid',
+            headStyles: { fillColor: [35, 30, 58], textColor: [250, 243, 230] },
+            styles: { fontSize: 9, cellPadding: 5 }
+          });
+
+          // 2. Category & Subcategory Breakdown
+          y = doc.lastAutoTable.finalY + 22;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(12);
+          doc.text('2. Category & Subcategory Breakdown', 40, y);
+          doc.autoTable({
+            startY: y + 8,
+            head: [['Category', 'Subcategory', 'Txns', 'Total Spent', 'Share']],
+            body: catSubRows.length
+              ? catSubRows.map(r => [r.category, r.subcategory, String(r.count), fmt(r.amount), r.share])
+              : [['No expense categories in this period', '', '', '', '']],
+            theme: 'striped',
+            headStyles: { fillColor: [99, 88, 199], textColor: [255, 255, 255] },
+            styles: { fontSize: 9, cellPadding: 4.5 }
+          });
+
+          // 3. Payment Methods & Top Merchants
+          y = doc.lastAutoTable.finalY + 22;
+          if (y > 680) { doc.addPage(); y = 48; }
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(12);
+          doc.text('3. Payment Methods & Top Merchants', 40, y);
+          doc.autoTable({
+            startY: y + 8,
+            head: [['Payment Method', 'Total', 'Share']],
+            body: pmRows.length ? pmRows.map(r => [r.method, fmt(r.amount), r.share]) : [['—', '—', '—']],
+            theme: 'grid',
+            headStyles: { fillColor: [47, 143, 91], textColor: [255, 255, 255] },
+            styles: { fontSize: 9, cellPadding: 4.5 }
+          });
+
+          y = doc.lastAutoTable.finalY + 14;
+          doc.autoTable({
+            startY: y,
+            head: [['Top Merchant', 'Total Spent', 'Share']],
+            body: topMerchRows.length ? topMerchRows.map(r => [r.merchant, fmt(r.amount), r.share]) : [['—', '—', '—']],
+            theme: 'grid',
+            headStyles: { fillColor: [209, 73, 73], textColor: [255, 255, 255] },
+            styles: { fontSize: 9, cellPadding: 4.5 }
+          });
+
+          // 4. Itemized Transactions Ledger
+          y = doc.lastAutoTable.finalY + 22;
+          if (y > 660) { doc.addPage(); y = 48; }
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(12);
+          doc.text(`4. Itemized Transactions (${txList.length})`, 40, y);
+          doc.autoTable({
+            startY: y + 8,
+            head: [['Date', 'Merchant', 'Category / Subcat', 'Method', 'Type', 'Amount']],
+            body: txList.length
+              ? txList.map(t => [
+                  formatDate(t.date),
+                  (t.merchant || '').slice(0, 24),
+                  `${getCategoryById(t.category).name}${t.subcategory ? ' / ' + t.subcategory : ''}`.slice(0, 26),
+                  t.paymentMethod || '',
+                  t.type,
+                  fmt(t.amount)
+                ])
+              : [['No transactions in this range', '', '', '', '', '']],
+            theme: 'striped',
+            headStyles: { fillColor: [35, 30, 58], textColor: [250, 243, 230] },
+            styles: { fontSize: 8.5, cellPadding: 4 }
+          });
+
+          doc.save(`aurelia-report-${isoDaysAgo(0)}.pdf`);
+          showToast('PDF Analysis Report downloaded!', 'success');
+        } catch (err) {
+          showToast('Generating printable fallback report...', 'info');
+          window.print();
+        }
       }
 
       /* =========================================================
@@ -3383,6 +4917,8 @@
         // Home Quick Actions
         document.getElementById('btn-home-edit-budget')?.addEventListener('click', openEditBudgetModal);
         document.getElementById('qa-paste-sms')?.addEventListener('click', () => openSMSParserModal());
+        document.getElementById('qa-scan-receipt')?.addEventListener('click', () => openReceiptScannerModal());
+        document.getElementById('qa-import-statement')?.addEventListener('click', () => openStatementImportModal());
         document.getElementById('qa-add-expense')?.addEventListener('click', () => openConfirmationModal({ amount: '', merchant: '', date: isoDaysAgo(0), time: '', type: 'expense', paymentMethod: 'UPI', account: state.accounts[0]?.name || 'Kotak 811', category: 'food', confidence: {} }));
         document.getElementById('qa-add-income')?.addEventListener('click', () => openConfirmationModal({ amount: '', merchant: '', date: isoDaysAgo(0), time: '', type: 'income', paymentMethod: 'NEFT', account: state.accounts[0]?.name || 'Kotak 811', category: 'salary', confidence: {} }));
         document.getElementById('qa-view-analytics')?.addEventListener('click', () => { currentTab = 'analytics'; renderApp(); });
@@ -3410,6 +4946,7 @@
         document.getElementById('tx-filter-type')?.addEventListener('change', (e) => { txFilters.type = e.target.value; renderApp(); });
         document.getElementById('tx-filter-account')?.addEventListener('change', (e) => { txFilters.account = e.target.value; renderApp(); });
         document.getElementById('tx-filter-sort')?.addEventListener('change', (e) => { txFilters.sort = e.target.value; renderApp(); });
+        document.getElementById('btn-tx-import-stmt')?.addEventListener('click', () => openStatementImportModal());
         document.getElementById('btn-tx-export-csv')?.addEventListener('click', () => exportCSV(getFilteredTransactions()));
         document.getElementById('cal-prev')?.addEventListener('click', () => { txCalendarMonth--; if (txCalendarMonth < 0) { txCalendarMonth = 11; txCalendarYear--; } renderApp(); });
         document.getElementById('cal-next')?.addEventListener('click', () => { txCalendarMonth++; if (txCalendarMonth > 11) { txCalendarMonth = 0; txCalendarYear++; } renderApp(); });
@@ -3419,13 +4956,14 @@
           btn.addEventListener('click', () => { analyticsSubTab = btn.dataset.analyticsTab; renderApp(); });
         });
         document.querySelectorAll('.range-btn').forEach(btn => {
-          btn.addEventListener('click', () => { analyticsRange = btn.dataset.range; renderApp(); });
+          btn.addEventListener('click', () => { analyticsRange = btn.dataset.range; drillCategoryId = null; drillSubcategory = null; renderApp(); });
         });
         document.getElementById('custom-from')?.addEventListener('change', (e) => { customDateFrom = e.target.value; renderApp(); });
         document.getElementById('custom-to')?.addEventListener('change', (e) => { customDateTo = e.target.value; renderApp(); });
         document.getElementById('btn-export-csv')?.addEventListener('click', () => exportCSV(filterTransactionsByRange(analyticsRange)));
         document.getElementById('btn-export-xls')?.addEventListener('click', () => exportExcelHTML(filterTransactionsByRange(analyticsRange)));
-        document.getElementById('btn-export-pdf')?.addEventListener('click', () => { window.print(); });
+        document.getElementById('btn-export-pdf')?.addEventListener('click', () => exportPDFReport(filterTransactionsByRange(analyticsRange)));
+        bindDrillDownEvents();
 
         // Budgets controls
         document.getElementById('btn-save-overall-budget')?.addEventListener('click', () => {
@@ -3761,11 +5299,11 @@
         document.querySelectorAll('[data-animate-val]').forEach(el => {
           const target = parseFloat(el.getAttribute('data-animate-val'));
           if (isNaN(target)) return;
-          const duration = 560;
+          const duration = 640;
           const startTime = performance.now();
           function step(now) {
             const t = Math.min(1, (now - startTime) / duration);
-            const eased = 1 - Math.pow(1 - t, 3);
+            const eased = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
             el.textContent = formatCurrency(target * eased);
             if (t < 1) requestAnimationFrame(step);
             else el.textContent = formatCurrency(target);
@@ -3774,9 +5312,27 @@
         });
       }
 
+      let scrollRevealObserver = null;
       function applyStaggerAnimations() {
-        document.querySelectorAll('#app-view .animate-in, #app-view .tx-row-btn, #app-view .cartridge-btn').forEach((el, idx) => {
+        document.querySelectorAll('#app-view .animate-in, #app-view .tx-row-btn, #app-view .cartridge-btn, #app-view .drill-cat-btn, #app-view .drill-sub-btn').forEach((el, idx) => {
           el.style.setProperty('--stagger', Math.min(idx, 10));
+        });
+        if (currentTab === 'analytics' || window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof IntersectionObserver === 'undefined') return;
+        if (scrollRevealObserver) scrollRevealObserver.disconnect();
+        const targets = Array.from(document.querySelectorAll('#app-view section, #app-view .tx-row-btn'));
+        scrollRevealObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('revealed');
+              scrollRevealObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.02, rootMargin: '80px 0px' });
+        targets.forEach((el, idx) => {
+          if (idx > 2) {
+            el.classList.add('scroll-reveal');
+            scrollRevealObserver.observe(el);
+          }
         });
       }
 
@@ -3841,6 +5397,16 @@
           st.style.animationDelay = `${-(i * 0.45)}s`;
           layer.appendChild(st);
         }
+        // 3 Diagonal Pixel Shooting Stars across top sky
+        for (let i = 0; i < 3; i++) {
+          const ss = document.createElement('span');
+          ss.className = 'pixel-shooting-star';
+          ss.style.left = `${8 + i * 28}%`;
+          ss.style.top = `${10 + i * 22}px`;
+          ss.style.animationDuration = `${6.5 + i * 2.4}s`;
+          ss.style.animationDelay = `${i * 2.1}s`;
+          layer.appendChild(ss);
+        }
         // 8 Ambient Rising Pixel Fireflies
         for (let i = 0; i < 8; i++) {
           const ff = document.createElement('span');
@@ -3876,6 +5442,12 @@
         document.getElementById('btn-fab-add')?.addEventListener('click', () => openSMSParserModal());
         document.getElementById('header-coin-badge')?.addEventListener('click', (e) => {
           haptic(15);
+          const badge = document.getElementById('header-coin-badge');
+          if (badge) {
+            badge.classList.remove('creeper-flashing');
+            void badge.offsetWidth;
+            badge.classList.add('creeper-flashing');
+          }
           spawnPixelConfetti(e.clientX, e.clientY, 22);
           showToast('Pixel coin boost! Keep your budget HP green.', 'info');
         });
@@ -4153,6 +5725,7 @@
         initGlobalListeners();
         renderApp();
         hydrateFromIndexedDB();
+        setInterval(() => { updateChrome(); }, 60000);
         fetch('/api/config')
           .then(r => r.ok ? r.json() : null)
           .then(cfg => {

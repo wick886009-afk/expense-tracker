@@ -1,5 +1,5 @@
-const CACHE_NAME = 'aurelia-liquid-v1';
-const ASSETS = ['/', '/index.html', '/manifest.json', '/icons/icon.svg'];
+const CACHE_NAME = 'aurelia-creeper-v3';
+const ASSETS = ['/', '/index.html', '/manifest.json', '/icons/apple-touch-icon.png', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon.svg'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
@@ -16,6 +16,6 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || event.request.url.includes('/api/')) return;
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request).catch(() => caches.get('/index.html')))
+    fetch(event.request).catch(() => caches.match(event.request).then((c) => c || caches.get('/index.html')))
   );
 });

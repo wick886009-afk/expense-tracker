@@ -1,17 +1,67 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#080B12"/>
-      <stop offset="100%" stop-color="#101725"/>
-    </linearGradient>
-    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#A8F0D0"/>
-      <stop offset="100%" stop-color="#8B9EFF"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
-  <circle cx="150" cy="140" r="140" fill="#A8F0D0" opacity="0.16"/>
-  <circle cx="380" cy="360" r="150" fill="#8B9EFF" opacity="0.18"/>
-  <rect x="96" y="136" width="320" height="240" rx="44" fill="#FFFFFF" fill-opacity="0.08" stroke="url(#accent)" stroke-width="6"/>
-  <text x="256" y="294" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="148" font-weight="700" fill="url(#accent)">₹</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" shape-rendering="crispEdges">
+  <rect x="0" y="0" width="64" height="64" fill="#5ebd49"/>
+  <rect x="64" y="0" width="64" height="64" fill="#50ac3e"/>
+  <rect x="128" y="0" width="64" height="64" fill="#439e34"/>
+  <rect x="192" y="0" width="64" height="64" fill="#7dd35f"/>
+  <rect x="256" y="0" width="64" height="64" fill="#5ebd49"/>
+  <rect x="320" y="0" width="64" height="64" fill="#439e34"/>
+  <rect x="384" y="0" width="64" height="64" fill="#50ac3e"/>
+  <rect x="448" y="0" width="64" height="64" fill="#307e27"/>
+  <rect x="0" y="64" width="64" height="64" fill="#439e34"/>
+  <rect x="64" y="64" width="64" height="64" fill="#7dd35f"/>
+  <rect x="128" y="64" width="64" height="64" fill="#50ac3e"/>
+  <rect x="192" y="64" width="64" height="64" fill="#439e34"/>
+  <rect x="256" y="64" width="64" height="64" fill="#307e27"/>
+  <rect x="320" y="64" width="64" height="64" fill="#5ebd49"/>
+  <rect x="384" y="64" width="64" height="64" fill="#439e34"/>
+  <rect x="448" y="64" width="64" height="64" fill="#5ebd49"/>
+  <rect x="0" y="128" width="64" height="64" fill="#50ac3e"/>
+  <rect x="64" y="128" width="64" height="64" fill="#14111d"/>
+  <rect x="128" y="128" width="64" height="64" fill="#14111d"/>
+  <rect x="192" y="128" width="64" height="64" fill="#5ebd49"/>
+  <rect x="256" y="128" width="64" height="64" fill="#50ac3e"/>
+  <rect x="320" y="128" width="64" height="64" fill="#14111d"/>
+  <rect x="384" y="128" width="64" height="64" fill="#14111d"/>
+  <rect x="448" y="128" width="64" height="64" fill="#439e34"/>
+  <rect x="0" y="192" width="64" height="64" fill="#5ebd49"/>
+  <rect x="64" y="192" width="64" height="64" fill="#14111d"/>
+  <rect x="128" y="192" width="64" height="64" fill="#14111d"/>
+  <rect x="192" y="192" width="64" height="64" fill="#439e34"/>
+  <rect x="256" y="192" width="64" height="64" fill="#5ebd49"/>
+  <rect x="320" y="192" width="64" height="64" fill="#14111d"/>
+  <rect x="384" y="192" width="64" height="64" fill="#14111d"/>
+  <rect x="448" y="192" width="64" height="64" fill="#50ac3e"/>
+  <rect x="0" y="256" width="64" height="64" fill="#307e27"/>
+  <rect x="64" y="256" width="64" height="64" fill="#5ebd49"/>
+  <rect x="128" y="256" width="64" height="64" fill="#50ac3e"/>
+  <rect x="192" y="256" width="64" height="64" fill="#14111d"/>
+  <rect x="256" y="256" width="64" height="64" fill="#14111d"/>
+  <rect x="320" y="256" width="64" height="64" fill="#439e34"/>
+  <rect x="384" y="256" width="64" height="64" fill="#7dd35f"/>
+  <rect x="448" y="256" width="64" height="64" fill="#439e34"/>
+  <rect x="0" y="320" width="64" height="64" fill="#439e34"/>
+  <rect x="64" y="320" width="64" height="64" fill="#50ac3e"/>
+  <rect x="128" y="320" width="64" height="64" fill="#14111d"/>
+  <rect x="192" y="320" width="64" height="64" fill="#14111d"/>
+  <rect x="256" y="320" width="64" height="64" fill="#14111d"/>
+  <rect x="320" y="320" width="64" height="64" fill="#14111d"/>
+  <rect x="384" y="320" width="64" height="64" fill="#5ebd49"/>
+  <rect x="448" y="320" width="64" height="64" fill="#307e27"/>
+  <rect x="0" y="384" width="64" height="64" fill="#7dd35f"/>
+  <rect x="64" y="384" width="64" height="64" fill="#439e34"/>
+  <rect x="128" y="384" width="64" height="64" fill="#14111d"/>
+  <rect x="192" y="384" width="64" height="64" fill="#14111d"/>
+  <rect x="256" y="384" width="64" height="64" fill="#14111d"/>
+  <rect x="320" y="384" width="64" height="64" fill="#14111d"/>
+  <rect x="384" y="384" width="64" height="64" fill="#50ac3e"/>
+  <rect x="448" y="384" width="64" height="64" fill="#5ebd49"/>
+  <rect x="0" y="448" width="64" height="64" fill="#50ac3e"/>
+  <rect x="64" y="448" width="64" height="64" fill="#307e27"/>
+  <rect x="128" y="448" width="64" height="64" fill="#14111d"/>
+  <rect x="192" y="448" width="64" height="64" fill="#5ebd49"/>
+  <rect x="256" y="448" width="64" height="64" fill="#439e34"/>
+  <rect x="320" y="448" width="64" height="64" fill="#14111d"/>
+  <rect x="384" y="448" width="64" height="64" fill="#439e34"/>
+  <rect x="448" y="448" width="64" height="64" fill="#7dd35f"/>
+  <rect x="6" y="6" width="500" height="500" fill="none" stroke="#14111D" stroke-width="12"/>
 </svg>

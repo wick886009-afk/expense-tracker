@@ -28,5 +28,8 @@ create policy "Users can update own finance state"
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on table public.user_finance_state to authenticated;
+
 -- Enable live cross-device Realtime updates
 alter publication supabase_realtime add table public.user_finance_state;
